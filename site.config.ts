@@ -9,7 +9,7 @@ export default siteConfig({
   rootNotionSpaceId: null,
 
   // basic site info (required)
-  name: 'Sans lingua franca',
+  name: 'public xikai()',
   domain: 'xikai.me',
   author: 'Xikai Liu',
 
@@ -53,16 +53,12 @@ export default siteConfig({
   navigationStyle: 'custom',
   navigationLinks: [
     {
-      title: 'Profolio',
-      pageId: 'Projects-7e90c6dcf1434331b0122154002db1ba'
-    },
-    {
       title: 'Skills',
       pageId: 'Skills-91468021e9fa41b9a8406f3f777a025e'
     },
     {
       title: 'WHOIS',
-      pageId: 'https://www.notion.so/case98/Self-Intro-1bc5954a106847c08dd13f0fba032930'
+      pageId: 'Self-Intro-1bc5954a106847c08dd13f0fba032930'
     }
   ]
 })
