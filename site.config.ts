@@ -2,14 +2,14 @@ import { siteConfig } from './lib/site-config'
 
 export default siteConfig({
   // the site's root Notion page (required)
-  rootNotionPageId: '1c11468517aa4c1aa3cfe824245e349b',
+  rootNotionPageId: 'public-xikai-1c11468517aa4c1aa3cfe824245e349b',
 
   // if you want to restrict pages to a single notion workspace (optional)
   // (this should be a Notion ID; see the docs for how to extract this)
   rootNotionSpaceId: null,
 
   // basic site info (required)
-  name: 'Sans lingua franca',
+  name: 'public xikai()',
   domain: 'xikai.me',
   author: 'Xikai Liu',
 
@@ -17,9 +17,9 @@ export default siteConfig({
   description: 'hi this is my place --xikai',
 
   // social usernames (optional)
-  twitter: 'kaixi98',
+  // twitter: 'kaixi98',
   github: 'iamGeoWat',
-  linkedin: 'Xikai Liu',
+  linkedin: 'https://www.linkedin.com/in/xikai-liu/',
   // newsletter: '#', // optional newsletter URL
   // youtube: '#', // optional youtube channel name or `channel/UCGbXXXXXXXXXXXXXXXXXXXXXX`
 
@@ -53,16 +53,12 @@ export default siteConfig({
   navigationStyle: 'custom',
   navigationLinks: [
     {
-      title: 'Profolio',
-      pageId: 'Projects-7e90c6dcf1434331b0122154002db1ba'
+      title: 'this.portfolio()',
+      pageId: 'this-portfolio-91468021e9fa41b9a8406f3f777a025e'
     },
     {
-      title: 'Skills',
-      pageId: 'Skills-91468021e9fa41b9a8406f3f777a025e'
-    },
-    {
-      title: 'WHOIS',
-      pageId: 'https://www.notion.so/case98/Self-Intro-1bc5954a106847c08dd13f0fba032930'
+      title: 'this.about()',
+      pageId: 'this-about-1bc5954a106847c08dd13f0fba032930'
     }
   ]
 })
