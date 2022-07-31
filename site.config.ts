@@ -57,6 +57,10 @@ export default siteConfig({
       pageId: 'this-portfolio-91468021e9fa41b9a8406f3f777a025e'
     },
     {
+      title: 'this.caniuse()',
+      pageId: 'this-caniuse-b7991dd414794f52bb8dac3285901388'
+    },
+    {
       title: 'this.about()',
       pageId: 'this-about-1bc5954a106847c08dd13f0fba032930'
     }
