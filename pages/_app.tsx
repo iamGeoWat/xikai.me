@@ -11,7 +11,7 @@ import 'katex/dist/katex.min.css'
 import 'prismjs/themes/prism-coy.css'
 
 // this might be better for dark mode
-// import 'prismjs/themes/prism-okaidia.css'
+import 'prismjs/themes/prism-okaidia.css'
 
 // global style overrides for notion
 import 'styles/notion.css'
