@@ -9,12 +9,12 @@ export default siteConfig({
   rootNotionSpaceId: null,
 
   // basic site info (required)
-  name: 'public xikai()',
+  name: 'xikai()',
   domain: 'xikai.me',
   author: 'Xikai Liu',
 
   // open graph metadata (optional)
-  description: 'hi this is my place --xikai',
+  description: 'hi!',
 
   // social usernames (optional)
   // twitter: 'kaixi98',
@@ -53,15 +53,15 @@ export default siteConfig({
   navigationStyle: 'custom',
   navigationLinks: [
     {
-      title: 'this.portfolio()',
+      title: 'portfolio()',
       pageId: 'this-portfolio-91468021e9fa41b9a8406f3f777a025e'
     },
     {
-      title: 'this.caniuse()',
+      title: 'photoPortfolio()',
       pageId: 'this-caniuse-b7991dd414794f52bb8dac3285901388'
     },
     {
-      title: 'this.about()',
+      title: 'aboutMe()',
       pageId: 'this-about-1bc5954a106847c08dd13f0fba032930'
     }
   ]
