@@ -2,7 +2,7 @@ import { siteConfig } from './lib/site-config'
 
 export default siteConfig({
   // the site's root Notion page (required)
-  rootNotionPageId: 'public-xikai-1c11468517aa4c1aa3cfe824245e349b',
+  rootNotionPageId: '1c11468517aa4c1aa3cfe824245e349b',
 
   // if you want to restrict pages to a single notion workspace (optional)
   // (this should be a Notion ID; see the docs for how to extract this)
@@ -54,15 +54,15 @@ export default siteConfig({
   navigationLinks: [
     {
       title: 'portfolio()',
-      pageId: 'this-portfolio-91468021e9fa41b9a8406f3f777a025e'
+      pageId: '91468021e9fa41b9a8406f3f777a025e'
     },
     {
-      title: 'photoPortfolio()',
-      pageId: 'this-caniuse-b7991dd414794f52bb8dac3285901388'
+      title: 'photography()',
+      pageId: 'b7991dd414794f52bb8dac3285901388'
     },
     {
       title: 'aboutMe()',
-      pageId: 'this-about-1bc5954a106847c08dd13f0fba032930'
+      pageId: '1bc5954a106847c08dd13f0fba032930'
     }
   ]
 })
