@@ -4,6 +4,15 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 })
 
 module.exports = withBundleAnalyzer({
+  async redirects() {
+    return [
+      {
+        source: '/resume',
+        destination: 'https://drive.google.com/file/d/1vDNRGYird41cEnu8WIMDNabUQuELGvRH',
+        permanent: true
+      }
+    ]
+  },
   staticPageGenerationTimeout: 300,
   images: {
     domains: [
