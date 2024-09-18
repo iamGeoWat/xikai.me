@@ -53,15 +53,15 @@ export default siteConfig({
   navigationStyle: 'custom',
   navigationLinks: [
     {
-      title: 'portfolio()',
+      title: 'projects',
       pageId: '91468021e9fa41b9a8406f3f777a025e'
     },
     {
-      title: 'photography()',
+      title: 'photos',
       pageId: 'b7991dd414794f52bb8dac3285901388'
     },
     {
-      title: 'aboutMe()',
+      title: 'about',
       pageId: '1bc5954a106847c08dd13f0fba032930'
     }
   ]
