@@ -10,6 +10,11 @@ module.exports = withBundleAnalyzer({
         source: '/resume',
         destination: 'https://drive.google.com/file/d/1vDNRGYird41cEnu8WIMDNabUQuELGvRH',
         permanent: true
+      },
+      {
+        source: '/open-in-apple-maps',
+        destination: 'https://www.icloud.com/shortcuts/da411ddd55444a8cb94348fb98acfc0a',
+        permanent: true
       }
     ]
   },
