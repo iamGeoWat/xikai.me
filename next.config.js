@@ -13,7 +13,7 @@ module.exports = withBundleAnalyzer({
       },
       {
         source: '/open-in-apple-maps',
-        destination: 'https://www.icloud.com/shortcuts/da411ddd55444a8cb94348fb98acfc0a',
+        destination: 'https://www.icloud.com/shortcuts/b18353f0bbe049eaaabb74b9e3b83853',
         permanent: true
       }
     ]
