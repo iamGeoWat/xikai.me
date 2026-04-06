@@ -9,11 +9,11 @@
 .action {
   position: relative;
   border-radius: 50%;
-  border: 2px solid var(--fg-color-6);
-  transition: all 300ms ease-out;
-  width: 3.5em;
-  height: 3.5em;
-  margin: 0 0 1em;
+  border: 1px solid var(--fg-color-6);
+  transition: border-color 200ms ease, opacity 200ms ease;
+  width: 3em;
+  height: 3em;
+  margin: 0 0 0.75em;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -21,6 +21,7 @@
   text-decoration: none !important;
   user-select: none;
   cursor: pointer;
+  opacity: 0.5;
 }
 
 .action:last-child {
@@ -33,7 +34,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -41,91 +41,55 @@
 }
 
 .actionBg svg {
-  width: 50%;
-  height: 50%;
+  width: 45%;
+  height: 45%;
   fill: var(--fg-color-6);
 }
 
 .actionBgPane {
-  transition: all 300ms ease-out;
+  transition: all 200ms ease;
   border-radius: 50%;
   width: 0;
   height: 0;
 }
 
 .action:hover {
-  transition: all 100ms ease-out;
+  opacity: 1;
+  border-color: var(--fg-color);
+  transition: all 150ms ease;
 }
 
 .action:hover .actionBgPane {
-  width: 100%;
-  height: 100%;
-  transition: all 100ms ease-out;
+  width: 0;
+  height: 0;
 }
 
 .action:hover svg {
-  transition: fill 100ms ease-out;
-  fill: var(--bg-color);
-}
-
-:global(.dark-mode) .action:hover svg {
+  transition: fill 150ms ease;
   fill: var(--fg-color);
 }
 
-.facebook .actionBgPane {
-  background: #3b5998;
-}
-.facebook:hover {
-  border-color: #3b5998;
-}
-
-.twitter .actionBgPane {
-  background: #2795e9;
-}
-.twitter:hover {
-  border-color: #2795e9;
-}
-
-.linkedin .actionBgPane {
-  background: #0077b5;
-}
-.linkedin:hover {
-  border-color: #0077b5;
-}
-
-.github .actionBgPane {
-  background: #c9510c;
-}
-.github:hover {
-  border-color: #c9510c;
-}
-
-.youtube .actionBgPane {
-  background: #FF0000;
-}
-.youtube:hover {
-  border-color: #FF0000;
-}
-
-.medium .actionBgPane {
-  background: #00ab6c;
-}
-.medium:hover {
-  border-color: #00ab6c;
-}
-
-.newsletter .actionBgPane {
-  background: #777777;
-}
-.newsletter:hover {
-  border-color: #777777;
-}
-
+/* No brand colors on hover — keep it neutral */
+.facebook .actionBgPane,
+.twitter .actionBgPane,
+.linkedin .actionBgPane,
+.github .actionBgPane,
+.youtube .actionBgPane,
+.medium .actionBgPane,
+.newsletter .actionBgPane,
 .email .actionBgPane {
-  background: #777;
+  background: transparent;
 }
+
+.facebook:hover,
+.twitter:hover,
+.linkedin:hover,
+.github:hover,
+.youtube:hover,
+.medium:hover,
+.newsletter:hover,
 .email:hover {
-  border-color: #777;
+  border-color: var(--fg-color);
 }
 
 @media only screen and (max-width: 768px) {

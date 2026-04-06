@@ -68,11 +68,12 @@
 .settings a,
 .social a {
   cursor: pointer;
-  font-size: 2em;
+  font-size: 1.5em;
   display: inline-flex;
   padding: 0.25em;
   margin-right: 1vw;
-  transition: color 250ms ease-out;
+  transition: opacity 200ms ease;
+  opacity: 0.4;
 }
 
 .settings a:last-of-type,
@@ -85,32 +86,15 @@
   transition: color 50ms ease-out;
 }
 
-.toggleDarkMode:hover {
-  color: #2795e9;
-}
-
-.twitter:hover {
-  color: #2795e9;
-}
-
-.zhihu:hover {
-  color: #0066ff;
-}
-
-.github:hover {
-  color: #c9510c;
-}
-
-.youtube:hover {
-  color: #ff0000;
-}
-
-.linkedin:hover {
-  color: #0077b5;
-}
-
+.toggleDarkMode:hover,
+.twitter:hover,
+.zhihu:hover,
+.github:hover,
+.youtube:hover,
+.linkedin:hover,
 .newsletter:hover {
-  color: #777777;
+  color: var(--fg-color);
+  opacity: 0.6;
 }
 
 .comments {
@@ -166,13 +150,13 @@
 }
 
 .likeTweet:hover {
-  background: #f6e3e8;
-  color: #e0265e;
+  background: rgba(0, 0, 0, 0.04);
+  color: inherit;
 }
 
 .retweet:hover {
-  color: #19bf64;
-  background: #e5f2e8;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 @media (max-width: 1360px) {

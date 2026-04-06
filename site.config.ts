@@ -14,7 +14,7 @@ export default siteConfig({
   author: 'Xikai Liu',
 
   // open graph metadata (optional)
-  description: 'hi!',
+  description: 'Software engineer at Apple.',
 
   // social usernames (optional)
   // twitter: 'kaixi98',
