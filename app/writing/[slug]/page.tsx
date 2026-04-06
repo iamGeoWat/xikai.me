@@ -21,8 +21,8 @@ export default async function ArticlePage({
 
   return (
     <main className="mx-auto max-w-reading px-6 py-24">
-      <Link href="/writing" className="text-muted hover:text-fg transition-colors text-sm mb-16 block">
-        &larr; writing
+      <Link href="/" className="text-muted hover:text-fg transition-colors text-sm mb-16 block">
+        &larr; back
       </Link>
 
       <article className="mt-8">

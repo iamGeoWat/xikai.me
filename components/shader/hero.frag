@@ -52,27 +52,41 @@ float snoise(vec3 v) {
   return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
 }
 
+// Dithering to eliminate color banding
+float dither(vec2 co) {
+  return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453) / 255.0;
+}
+
 void main() {
   vec2 st = vUv;
   float aspect = uResolution.x / uResolution.y;
   st.x *= aspect;
 
+  // Mouse influence
   vec2 mouse = uMouse;
   mouse.x *= aspect;
-  float mouseDist = length(st - mouse) * 2.0;
-  float mouseInfluence = smoothstep(1.0, 0.0, mouseDist) * 0.15;
+  float mouseDist = length(st - mouse);
+  float mouseInfluence = smoothstep(0.8, 0.0, mouseDist) * 0.2;
 
-  float t = uTime * 0.08;
-  float n1 = snoise(vec3(st * 1.5, t)) * 0.5 + 0.5;
-  float n2 = snoise(vec3(st * 3.0 + 10.0, t * 1.3)) * 0.5 + 0.5;
-  float n3 = snoise(vec3(st * 6.0 + 20.0, t * 0.7)) * 0.5 + 0.5;
+  // Time
+  float t = uTime * 0.06;
 
-  float n = n1 * 0.6 + n2 * 0.3 + n3 * 0.1 + mouseInfluence;
+  // Layered noise with more variation
+  float n1 = snoise(vec3(st * 1.2, t)) * 0.5 + 0.5;
+  float n2 = snoise(vec3(st * 2.5 + 5.0, t * 1.5)) * 0.5 + 0.5;
+  float n3 = snoise(vec3(st * 5.0 + 10.0, t * 0.8)) * 0.5 + 0.5;
 
-  vec3 color = vec3(0.04);
-  color += n * 0.06;
-  color.r += n1 * 0.02;
-  color.b += n2 * 0.015;
+  float n = n1 * 0.55 + n2 * 0.3 + n3 * 0.15 + mouseInfluence;
+
+  // Wider color range with warm/cool shifts
+  vec3 color = vec3(0.03, 0.025, 0.035);
+  color += n * 0.14;
+  color.r += n1 * 0.04;
+  color.g += n2 * 0.015;
+  color.b += n2 * 0.05 + n3 * 0.02;
+
+  // Apply dithering
+  color += dither(gl_FragCoord.xy);
 
   gl_FragColor = vec4(color, 1.0);
 }
