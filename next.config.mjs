@@ -10,6 +10,13 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.(frag|vert|glsl)$/,
+      type: 'asset/source',
+    })
+    return config
+  },
   async redirects() {
     return [
       {
