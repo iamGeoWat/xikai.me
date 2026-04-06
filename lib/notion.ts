@@ -76,3 +76,43 @@ export async function getPageBySlug(slug: string): Promise<{ id: string; blocks:
 export async function getPageContent(pageId: string): Promise<any[]> {
   return getPageBlocks(pageId)
 }
+
+export async function getProjects(): Promise<{ title: string; description: string; url: string | null }[]> {
+  const blocks = await getPageBlocks(siteConfig.projectsPageId)
+  const projects: { title: string; description: string; url: string | null }[] = []
+
+  for (const block of blocks) {
+    if (block.type === 'child_page') {
+      const childBlocks = await getPageBlocks(block.id)
+      const firstText = childBlocks.find((b: any) => b.type === 'paragraph')
+      const description = firstText?.paragraph?.rich_text?.[0]?.plain_text ?? ''
+      const linkBlock = childBlocks.find((b: any) => b.type === 'bookmark')
+      const url = linkBlock?.bookmark?.url ?? null
+
+      projects.push({
+        title: block.child_page.title,
+        description,
+        url,
+      })
+    }
+  }
+
+  return projects
+}
+
+export async function getPhotos(): Promise<{ src: string; alt: string }[]> {
+  const blocks = await getPageBlocks(siteConfig.photosPageId)
+  const photos: { src: string; alt: string }[] = []
+
+  for (const block of blocks) {
+    if (block.type === 'image') {
+      const src = block.image.type === 'external'
+        ? block.image.external.url
+        : block.image.file.url
+      const alt = block.image.caption?.[0]?.plain_text ?? ''
+      photos.push({ src, alt })
+    }
+  }
+
+  return photos
+}
