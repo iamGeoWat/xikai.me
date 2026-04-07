@@ -72,10 +72,9 @@ export function GlassPills() {
         <button
           key={link.id}
           onClick={() => scrollTo(link.id)}
-          className={`glass-pill inline-flex items-center px-6 py-2.5 rounded-pill text-fg/80 hover:text-fg transition-colors text-lg tracking-wide min-h-[44px] ${
+          className={`glass-pill relative inline-flex items-center px-6 py-2.5 rounded-pill text-fg/80 hover:text-fg transition-colors text-lg tracking-wide min-h-[44px] ${
             !glassReady ? 'liquid-glass-fallback rounded-pill' : ''
           }`}
-          style={{ position: 'fixed' }}
           data-liquid-ignore
         >
           <span data-liquid-ignore>{link.label}</span>
