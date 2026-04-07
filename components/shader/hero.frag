@@ -62,30 +62,55 @@ void main() {
   float aspect = uResolution.x / uResolution.y;
   st.x *= aspect;
 
-  // Mouse influence
+  // Mouse
   vec2 mouse = uMouse;
   mouse.x *= aspect;
   float mouseDist = length(st - mouse);
-  float mouseInfluence = smoothstep(0.8, 0.0, mouseDist) * 0.2;
 
-  // Time
-  float t = uTime * 0.06;
+  float t = uTime * 0.04;
 
-  // Layered noise with more variation
-  float n1 = snoise(vec3(st * 1.2, t)) * 0.5 + 0.5;
-  float n2 = snoise(vec3(st * 2.5 + 5.0, t * 1.5)) * 0.5 + 0.5;
-  float n3 = snoise(vec3(st * 5.0 + 10.0, t * 0.8)) * 0.5 + 0.5;
+  // Multiple noise layers at different scales and speeds
+  float n1 = snoise(vec3(st * 0.6, t * 0.8));
+  float n2 = snoise(vec3(st * 1.2 + 3.0, t * 1.1));
+  float n3 = snoise(vec3(st * 2.4 + 7.0, t * 0.5));
+  float n4 = snoise(vec3(st * 0.3 + vec2(t * 0.2, 0.0), t * 0.3));
 
-  float n = n1 * 0.55 + n2 * 0.3 + n3 * 0.15 + mouseInfluence;
+  // Warp coordinates with noise for organic flow
+  vec2 warp = st + 0.15 * vec2(n1, n2);
+  float nw = snoise(vec3(warp * 1.5, t * 0.7));
 
-  // Wider color range with warm/cool shifts
-  vec3 color = vec3(0.03, 0.025, 0.035);
-  color += n * 0.14;
-  color.r += n1 * 0.04;
-  color.g += n2 * 0.015;
-  color.b += n2 * 0.05 + n3 * 0.02;
+  // Color palette — multiple hues that shift across the canvas
+  vec3 c1 = vec3(0.05, 0.02, 0.15);  // deep indigo
+  vec3 c2 = vec3(0.15, 0.03, 0.12);  // plum
+  vec3 c3 = vec3(0.02, 0.08, 0.18);  // ocean blue
+  vec3 c4 = vec3(0.12, 0.06, 0.02);  // warm amber
+  vec3 c5 = vec3(0.03, 0.12, 0.10);  // teal
 
-  // Apply dithering
+  // Blend colors based on different noise channels
+  float blend1 = n1 * 0.5 + 0.5;
+  float blend2 = n2 * 0.5 + 0.5;
+  float blend3 = n4 * 0.5 + 0.5;
+
+  vec3 color = mix(c1, c2, blend1);
+  color = mix(color, c3, blend2 * 0.6);
+  color = mix(color, c4, smoothstep(0.3, 0.7, blend3) * 0.4);
+  color = mix(color, c5, smoothstep(0.5, 0.9, nw * 0.5 + 0.5) * 0.3);
+
+  // Add luminance variation from fine noise
+  color += (n3 * 0.5 + 0.5) * 0.08;
+  color += nw * 0.04;
+
+  // Mouse glow — warm bright spot that follows cursor
+  float mouseGlow = smoothstep(0.8, 0.0, mouseDist);
+  color += mouseGlow * 0.15 * vec3(0.4, 0.2, 0.6);
+  // Secondary wider ring
+  float mouseRing = smoothstep(1.5, 0.3, mouseDist) * 0.06;
+  color += mouseRing * vec3(0.2, 0.3, 0.5);
+
+  // Keep it moody — clamp brightness
+  color = clamp(color, 0.0, 0.28);
+
+  // Dithering
   color += dither(gl_FragCoord.xy);
 
   gl_FragColor = vec4(color, 1.0);
