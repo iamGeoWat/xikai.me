@@ -18,11 +18,9 @@ float snoise(vec3 v) {
   const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
   const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
 
-  // First corner
   vec3 i  = floor(v + dot(v, C.yyy));
   vec3 x0 = v - i + dot(i, C.xxx);
 
-  // Other corners
   vec3 g = step(x0.yzx, x0.xyz);
   vec3 l = 1.0 - g;
   vec3 i1 = min(g.xyz, l.zxy);
@@ -32,15 +30,13 @@ float snoise(vec3 v) {
   vec3 x2 = x0 - i2 + C.yyy;
   vec3 x3 = x0 - D.yyy;
 
-  // Permutations
   i = mod289(i);
   vec4 p = permute(permute(permute(
     i.z + vec4(0.0, i1.z, i2.z, 1.0))
   + i.y + vec4(0.0, i1.y, i2.y, 1.0))
   + i.x + vec4(0.0, i1.x, i2.x, 1.0));
 
-  // Gradients: 7x7 points over a square, mapped onto an octahedron.
-  float n_ = 0.142857142857; // 1.0/7.0
+  float n_ = 0.142857142857;
   vec3  ns = n_ * D.wyz - D.xzx;
 
   vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
@@ -67,14 +63,12 @@ float snoise(vec3 v) {
   vec3 p2 = vec3(a1.xy, h.z);
   vec3 p3 = vec3(a1.zw, h.w);
 
-  // Normalise gradients
   vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
   p0 *= norm.x;
   p1 *= norm.y;
   p2 *= norm.z;
   p3 *= norm.w;
 
-  // Mix final noise value
   vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
   m = m * m;
   return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
@@ -82,33 +76,39 @@ float snoise(vec3 v) {
 
 void main() {
   vec2 uv = vUv;
-  float t = uTime * 0.08;
+  float aspect = uResolution.x / uResolution.y;
+  uv.x *= aspect;
 
-  // Mouse influence — gentle offset
-  vec2 mouse = uMouse * 0.15;
+  float t = uTime * 0.12;
 
-  // Three noise layers at different scales for depth
-  float n1 = snoise(vec3(uv * 2.0 + mouse, t));
-  float n2 = snoise(vec3(uv * 4.0 - mouse * 0.5, t * 1.3 + 10.0));
-  float n3 = snoise(vec3(uv * 8.0 + mouse * 0.3, t * 0.7 + 20.0));
+  // Mouse influence — warp the UV space
+  vec2 mouse = uMouse * 0.5;
+  mouse.x *= aspect;
+  float mouseDist = length(uv - (mouse * 0.5 + vec2(aspect * 0.5, 0.5)));
+  float mouseWarp = smoothstep(0.8, 0.0, mouseDist) * 0.15;
 
-  // Combine layers with diminishing weight
-  float n = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
+  vec2 warpedUv = uv + mouseWarp * normalize(uv - (mouse * 0.5 + vec2(aspect * 0.5, 0.5)));
 
-  // Map noise to a very subtle brightness offset
-  // Base is near-black (#0a0a0a ≈ 0.039), with faint variation
-  float base = 0.039;
-  float brightness = base + n * 0.025;
+  // Layered noise — large flowing forms
+  float n1 = snoise(vec3(warpedUv * 1.2, t)) * 0.5 + 0.5;
+  float n2 = snoise(vec3(warpedUv * 2.5 + 10.0, t * 0.8)) * 0.5 + 0.5;
+  float n3 = snoise(vec3(warpedUv * 5.0 + 20.0, t * 1.4)) * 0.5 + 0.5;
 
-  // Very subtle warm / cool tint driven by different noise offsets
-  float warm = snoise(vec3(uv * 3.0, t * 0.5 + 5.0)) * 0.008;
-  float cool = snoise(vec3(uv * 3.0, t * 0.5 + 50.0)) * 0.008;
+  float n = n1 * 0.55 + n2 * 0.30 + n3 * 0.15;
 
-  vec3 color = vec3(
-    brightness + warm,
-    brightness,
-    brightness + cool
-  );
+  // Color palette — dark with visible flowing gradients
+  // Cool blue-purple in shadows, warm amber in highlights
+  vec3 shadow = vec3(0.02, 0.03, 0.06);   // deep blue-black
+  vec3 mid    = vec3(0.06, 0.05, 0.08);   // muted purple
+  vec3 bright = vec3(0.12, 0.08, 0.05);   // warm amber hint
+
+  vec3 color = mix(shadow, mid, smoothstep(0.3, 0.55, n));
+  color = mix(color, bright, smoothstep(0.6, 0.85, n));
+
+  // Add a subtle vignette
+  vec2 center = vec2(aspect * 0.5, 0.5);
+  float vignette = 1.0 - smoothstep(0.3, 1.2, length(uv - center) / max(aspect, 1.0));
+  color *= 0.7 + vignette * 0.3;
 
   gl_FragColor = vec4(color, 1.0);
 }

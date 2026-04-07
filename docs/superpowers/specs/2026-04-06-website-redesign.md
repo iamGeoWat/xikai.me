@@ -1,139 +1,146 @@
 # xikai.me Redesign Spec
 
 ## Intent
-Replace the generic nextjs-notion-starter-kit template with a custom-built personal site that deeply integrates Apple's Liquid Glass design language via liquidGL. The hero background is a dense typographic matrix (monospace symbols, code fragments, emoji) with scattered oversized keywords — all pure DOM/CSS, perfectly capturable by html2canvas. Liquid glass pills float over this texture, refracting and warping the characters through them. The glass IS the visual centerpiece. Content stays clean.
-
-## Visual Concept: Symbol Matrix + Scattered Type
-
-The landing hero background is a full-viewport layer of:
-
-**Symbol Matrix (primary):**
-- Dense monospace grid of characters: code symbols (`{}`, `=>`, `//`, `&&`, `0x`, `fn`), math notation (`∑`, `∂`, `∫`, `π`, `∞`), unicode blocks (`░`, `▓`, `█`, `◆`, `●`), emoji (`📷`, `🍎`, `⌘`, `✦`), and short code fragments
-- Very low opacity (~0.06-0.12), varied sizes (0.6rem-1.2rem), slight rotation variance
-- Monospace font (system or SF Mono), muted neutral colors on #0a0a0a background
-- Static — no animation needed. The glass pills bring them to life through refraction
-
-**Scattered Keywords (accent):**
-- 5-8 oversized words placed at angles across the viewport: `code`, `curiosity`, `build`, `xikai`, `WWDC`, `∞`
-- Very large (8-15vw), extremely low opacity (~0.03-0.05), rotated
-- Provides large-scale shape variation for the glass to refract — you barely see the words directly, but through the glass they warp and become visible
-
-**Why this works for liquidGL:**
-- 100% DOM content → html2canvas captures it perfectly
-- High character density = rich refraction texture (every glass pill shows warped symbols)
-- Low opacity = doesn't compete with foreground UI
-- No JS, no canvas, no WebGL for the background — liquidGL is the only WebGL on the page
-- Very lightweight, loads instantly
-
-## Liquid Glass Strategy (per Apple HIG)
-
-**Glass is reserved for the navigation layer.** Following Apple's HIG:
-- Glass elements: entry links on landing (capsule pills), floating back-nav on article pages
-- No glass on content: article text, project descriptions, photo grids stay clean
-- Never stack glass on glass
-- One primary glass sheet per view
-- Shapes: capsule (pill) for interactive elements
-- Accessibility: respect `prefers-reduced-transparency` (fall back to CSS backdrop-filter) and `prefers-reduced-motion` (disable tilt)
-
-**liquidGL integration**: Library loaded from `/public/scripts/liquidGL.js`. html2canvas from CDN. All glass elements are client-only. The symbol matrix background is the refraction source.
+Replace the generic nextjs-notion-starter-kit template with a custom-built personal site that reflects Kai's aesthetic: international/Swiss design rigor + Eastern restraint + generative visual warmth. An engineer's site with taste.
 
 ## Pages
 
 ### Landing (`/`)
-- Full-viewport hero: symbol matrix + scattered keywords as background layer (CSS positioned div behind everything)
-- Center: site title in large sans-serif, one-liner subtitle, social links
-- Entry navigation: 4 liquid glass capsule pills — `writing` · `projects` · `photos` · `about` — refracting the symbol matrix through them
-- Scroll indicator at bottom
-- Below the fold: content sections (writing, projects, photos)
-- `data-liquid-ignore` on foreground text to exclude from glass snapshot
+- Full-viewport hero with a WebGL shader background (generative noise field / flowing particles / geometric morph), responding to mouse position and evolving over time
+- Overlaid: site title `xikai()` in large sans-serif type
+- Below title: entry links — `writing` · `projects` · `photos` · `about`
+- No navbar, no scroll. A single-screen portal
+- Color: dark base (~#0a0a0a) with subtle animated light/color from the shader. Or inverted: light base with dark shader lines. Decide during implementation based on what looks better
+- Shader loads asynchronously; page renders immediately with a solid background, shader fades in
 
-### Writing (`/writing/[slug]`)
-- Article detail: custom Notion block renderer, ~680px, serif body, generous line-height
-- Floating glass back-nav pill at top (appears on scroll), refracting article content beneath it
-- Content: no glass, pure reading experience
+### Writing (`/writing`)
+- Article list: minimal — title + date per row, no cards, no cover images, monospace or sans-serif, sorted by date descending
+- Article detail (`/writing/[slug]`): custom Markdown renderer, ~680px reading width, serif body font, generous line-height (~1.8), ample vertical spacing between blocks
+- Content source: Notion API → blocks → custom React components
+- Supported Notion blocks: paragraph, headings (h1-h3), bulleted/numbered list, code, image, quote, callout, divider, bookmark. Unsupported blocks render as plain text fallback
+- Light scroll-based micro-animations on headings (fade-in on enter)
 
-### Projects (section on landing)
-- Grid of plain project cards: name + description + external link
-- Subtle hover: translate-y + border color shift
-- No glass
+### Projects (`/projects`)
+- Grid of project cards: project name + one-line description + external link
+- Hover: subtle translate-y shift + opacity change
+- Content source: a Notion database (existing "projects" page), queried via Notion API
+- Each card links externally (GitHub, App Store, etc.) — no detail pages needed initially
 
-### Photos (section on landing)
-- Masonry/columns layout, large photos
-- No glass, no effects — photos speak for themselves
+### Photos (`/photos`)
+- Large-format photo display, one or two per viewport row
+- Scroll-driven: parallax or gentle scale transitions as photos enter/exit viewport
+- Photos loaded from Notion (existing "photos" page) or a hardcoded list of image URLs
+- No lightbox initially — photos are the layout
 
-### About (section on landing)
-- Centered text, large type
-- Name, title, one-liner, links
+### About (`/about`)
+- Centered text block, large type
+- Content: the few lines already written (engineer at Apple, WWDC winner, builds things with code, links)
+- Optional: a subtle breathing background texture or gradient shift
 
 ## Tech Stack
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| Framework | Next.js 14, App Router | Modern, RSC, streaming |
-| Liquid Glass | liquidGL + html2canvas | Real WebGL refraction on DOM content |
-| Background | Pure CSS/HTML (symbol matrix) | Zero JS, html2canvas-friendly, fast |
-| CMS | Notion official API (@notionhq/client) | Full rendering control |
-| Styling | Tailwind CSS | Design tokens, rapid iteration |
-| Fonts | Inter (UI) + Source Serif 4 (body) + JetBrains Mono (matrix) | Clean UI + reading + code aesthetic |
-| Deploy | Vercel | Auto-deploy |
-
-**Removed:** @react-three/fiber, three, @react-three/drei, glsl-noise — no shader needed.
+| Framework | Next.js 14, App Router | Modern routing, RSC support, better than Pages Router for new projects |
+| 3D/Visual | @react-three/fiber + @react-three/drei + glsl-noise | Mature React-Three ecosystem, community shaders, good DX |
+| CMS | Notion official API (@notionhq/client) | Full control over rendering, no react-notion-x lock-in |
+| Styling | Tailwind CSS | Rapid iteration, design-system consistency, purged in prod |
+| Fonts | Inter (UI) + serif TBD for body (candidates: Newsreader, Source Serif, Lora) | Inter is clean/neutral for UI; serif for long-form reading comfort |
+| Deploy | Vercel | Already configured, zero-config for Next.js |
 
 ## Architecture
 
 ```
 app/
-  layout.tsx              — root layout, fonts, Tailwind, liquidGL scripts
-  page.tsx                — single-page: hero + content sections
-  globals.css             — Tailwind + glass fallbacks
+  layout.tsx          — root layout, font loading, Tailwind
+  page.tsx            — landing page (hero + shader + links)
   writing/
-    [slug]/page.tsx       — article detail with glass back-nav
+    page.tsx          — article list
+    [slug]/page.tsx   — article detail
+  projects/page.tsx   — project grid
+  photos/page.tsx     — photo gallery
+  about/page.tsx      — about text
 
 components/
-  glass/
-    GlassPills.tsx        — "use client": initializes liquidGL on entry nav pills
-    GlassNav.tsx          — "use client": floating back-nav pill for articles
-  hero/
-    SymbolMatrix.tsx      — the background matrix of characters/symbols/emoji
-    ScatteredWords.tsx    — oversized low-opacity keywords
+  shader/
+    HeroScene.tsx     — R3F canvas with shader material
+    shaders/          — GLSL fragment/vertex shader files
   notion/
-    renderer.tsx          — Notion block → React mapper
-    blocks/               — Paragraph, Heading, Code, Image, Quote, Callout, Divider, Bookmark
+    renderer.tsx      — maps Notion block types to React components
+    blocks/           — individual block components (Paragraph, Heading, Code, Image, etc.)
   ui/
-    ProjectCard.tsx       — plain project card
+    EntryLink.tsx     — landing page link component
+    PhotoCard.tsx     — photo with scroll-driven animation
+    ProjectCard.tsx   — project grid card
+    ArticleRow.tsx    — writing list row
 
 lib/
-  notion.ts               — Notion API client
-  config.ts               — site config
-  types.ts                — shared types
-
-public/
-  scripts/
-    liquidGL.js           — liquidGL library
+  notion.ts           — Notion API client, getPage(), getDatabase(), getBlocks()
+  types.ts            — shared TypeScript types
 ```
+
+## Data Flow
+
+1. **Build/request time**: Next.js route calls `lib/notion.ts` to fetch page/database content from Notion API
+2. **Notion API returns**: block objects (paragraphs, headings, images, etc.)
+3. **Custom renderer**: `components/notion/renderer.tsx` maps each block type to a styled React component
+4. **Static generation**: pages are statically generated with ISR (revalidate: 60s) for content freshness
+5. **Shader**: loaded client-side only, behind `"use client"` boundary, with lazy loading
+
+## Notion Integration
+
+- Use `@notionhq/client` with an integration token (internal integration)
+- Need: `NOTION_TOKEN` env var (Kai to create an internal integration at notion.so/my-integrations and share relevant pages with it)
+- Fetch functions:
+  - `getPage(pageId)` → page properties + child blocks (recursive for nested blocks)
+  - `getDatabase(databaseId)` → list of pages with properties (for blog list, project list)
+- Blog Posts database ID: `d7f6f711-e2e9-4288-aa4a-a77013800ab2`
+- Projects page ID: `91468021-e9fa-41b9-a840-6f3f777a025e`
+- Photos page ID: `b7991dd4-1479-4f52-bb8d-ac3285901388`
+- About page ID: `1bc5954a-1068-47c0-8dd1-3f0fba032930`
+
+## Shader Design
+
+- A single generative visual for the landing hero
+- Starting point: a noise-based flow field or particle system with subtle color gradients
+- Responds to mouse position (gentle distortion / attraction)
+- Evolves slowly over time (autonomous animation)
+- Performance budget: 60fps on M1 MacBook, graceful fallback (solid background) on low-end devices
+- Implementation: ShaderMaterial on a fullscreen plane in R3F, custom fragment shader using simplex/perlin noise from glsl-noise
 
 ## Design Tokens
 
-- **Colors**: bg `#0a0a0a`, fg `#e5e5e5`, muted `#737373`, matrix chars `#e5e5e5` at 6-12% opacity, scattered words at 3-5% opacity
-- **Fonts**: Inter (UI), Source Serif 4 (reading), JetBrains Mono (symbol matrix)
-- **Border radius**: pill (9999px) for glass, 0 for content
-- **Touch targets**: 44px minimum
-- **Transitions**: 200-300ms ease
-- **Max width**: 680px reading, 1200px grids
+- **Colors**: Near-black bg `#0a0a0a`, off-white text `#e5e5e5`, mid-gray secondary `#737373`, one accent TBD (muted blue or warm neutral)
+- **Spacing**: 8px base grid, generous margins (32-64px between sections)
+- **Border radius**: 0 everywhere (sharp, rational)
+- **Transitions**: 200-300ms ease, no bounce/spring (calm)
+- **Max content width**: 680px for reading, 1200px for grids
 
-## Accessibility
-- `prefers-reduced-transparency`: glass falls back to CSS `backdrop-filter: blur(12px)`
-- `prefers-reduced-motion`: disable tilt on glass
-- 4.5:1 contrast on all readable text
-- Symbol matrix is decorative (aria-hidden)
+## What Gets Deleted
 
-## Notion Integration (unchanged)
-- Blog Posts DB: `d7f6f711-e2e9-4288-aa4a-a77013800ab2`
-- Projects page: `91468021-e9fa-41b9-a840-6f3f777a025e`
-- Photos page: `b7991dd4-1479-4f52-bb8d-ac3285901388`
-- About page: `1bc5954a-1068-47c0-8dd1-3f0fba032930`
+- All react-notion-x dependency and related code
+- All Pages Router files (`pages/` directory)
+- Old CSS files (`styles/notion.css`, `styles/prism-theme.css`, `styles/global.css`)
+- Old components that wrap react-notion-x (`NotionPage.tsx`, `PageSocial.tsx`, etc.)
+- The `lib/` files that use the unofficial Notion client (`notion-api.ts`, `notion.ts`, `resolve-notion-page.ts`, etc.)
 
-## Out of Scope
-- Search, RSS, comments, analytics, i18n
-- Dark/light toggle (dark only)
-- Three.js / WebGL shader background (replaced by symbol matrix)
+## What Stays
+
+- `site.config.ts` (adapted for new structure)
+- Git history
+- Vercel deployment config
+- Domain configuration
+
+## Requirements from Kai
+
+- Create a Notion internal integration and share relevant pages/databases with it
+- Provide the `NOTION_TOKEN` to set as env var (local `.env` and Vercel)
+
+## Out of Scope (for now)
+
+- Search functionality
+- RSS feed
+- Dark/light mode toggle (start with dark only, matching the shader aesthetic)
+- Comments
+- Analytics
+- i18n
