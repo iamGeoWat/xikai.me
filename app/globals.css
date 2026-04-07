@@ -11,17 +11,3 @@
     @apply bg-fg/20;
   }
 }
-
-/* Liquid Glass CSS fallback */
-.liquid-glass-fallback {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass-fallback {
-    background: rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(16px) saturate(160%);
-  }
-}

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Source_Serif_4, JetBrains_Mono } from 'next/font/google'
-import Script from 'next/script'
+import { Inter, Source_Serif_4 } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({
@@ -12,12 +11,6 @@ const inter = Inter({
 const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
   variable: '--font-source-serif',
-  display: 'swap',
-})
-
-const jetbrains = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains',
   display: 'swap',
 })
 
@@ -33,18 +26,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sourceSerif.variable} ${jetbrains.variable}`}>
-      <body className="font-sans">
-        {children}
-        <Script
-          src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-          strategy="afterInteractive"
-        />
-        <Script
-          src="/scripts/liquidGL.js"
-          strategy="afterInteractive"
-        />
-      </body>
+    <html lang="en" className={`${inter.variable} ${sourceSerif.variable}`}>
+      <body className="font-sans">{children}</body>
     </html>
   )
 }

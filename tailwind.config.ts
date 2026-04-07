@@ -1,7 +1,10 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -16,7 +19,6 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         serif: ['var(--font-source-serif)', 'Georgia', 'serif'],
-        mono: ['var(--font-jetbrains)', 'monospace'],
       },
       borderRadius: {
         pill: '9999px',
