@@ -1,12 +1,12 @@
-# xikai.me Redesign Implementation Plan (v2 — Liquid Glass)
+# xikai.me Redesign Implementation Plan (v3 — Liquid Glass + Symbol Matrix)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rebuild xikai.me with Apple's Liquid Glass design language (via liquidGL) over a generative shader background. Glass for navigation chrome, clean content, single-page landing with sections.
+**Goal:** Rebuild xikai.me with liquidGL glass pills floating over a dense typographic symbol matrix. Glass IS the visual centerpiece. No Three.js — background is pure DOM, perfectly captured by html2canvas for refraction.
 
-**Architecture:** Next.js 14 App Router, Tailwind CSS, liquidGL for glass effects, R3F for shader hero, Notion official API for content. Glass elements are client-only wrappers around liquidGL. Shader and glass together create the visual identity.
+**Architecture:** Next.js 14 App Router, Tailwind CSS, liquidGL for glass effects, Notion official API for content. Symbol matrix background rendered as static HTML/CSS. Glass pills refract the matrix through them.
 
-**Tech Stack:** Next.js 14, React 18, TypeScript, Tailwind CSS, liquidGL, @react-three/fiber, @notionhq/client
+**Tech Stack:** Next.js 14, React 18, TypeScript, Tailwind CSS, liquidGL, @notionhq/client, JetBrains Mono
 
 **Spec:** `docs/superpowers/specs/2026-04-06-website-redesign.md`
 
@@ -16,23 +16,21 @@
 
 ```
 app/
-  layout.tsx              — root layout: fonts, Tailwind, liquidGL + html2canvas scripts
-  page.tsx                — single-page: hero + writing + projects + photos + footer
-  globals.css             — Tailwind directives + base styles + glass fallbacks
+  layout.tsx              — root layout: fonts (Inter, Source Serif 4, JetBrains Mono), Tailwind, liquidGL scripts
+  page.tsx                — single-page: hero + writing + projects + photos
+  globals.css             — Tailwind + glass fallbacks
   writing/
-    [slug]/page.tsx       — article detail with floating glass back-nav
+    [slug]/page.tsx       — article detail with glass back-nav
 
 components/
   glass/
-    LiquidGlass.tsx       — "use client" core wrapper: initializes liquidGL on a ref
-    GlassPill.tsx         — capsule navigation button with glass effect
-    GlassNav.tsx          — floating fixed-position glass back-nav for article pages
-  shader/
-    HeroScene.tsx         — R3F canvas with noise shader (already exists, keep as-is)
-    hero.frag             — fragment shader (already exists)
-    hero.vert             — vertex shader (already exists)
+    GlassPills.tsx        — "use client": entry nav pills with liquidGL
+    GlassNav.tsx          — "use client": floating back-nav for articles
+  hero/
+    SymbolMatrix.tsx      — dense monospace character grid
+    ScatteredWords.tsx    — oversized low-opacity keywords
   notion/
-    renderer.tsx          — Notion block → React component mapper + renderRichText
+    renderer.tsx          — Notion block → React component mapper
     blocks/
       Paragraph.tsx
       Heading.tsx
@@ -45,17 +43,14 @@ components/
       Divider.tsx
       Bookmark.tsx
   ui/
-    ProjectCard.tsx        — project grid card (plain, no glass)
+    ProjectCard.tsx       — plain project card
 
 lib/
-  notion.ts               — Notion API client + fetch helpers
-  config.ts               — site config (IDs, metadata)
-  types.ts                — shared types
+  notion.ts
+  config.ts
+  types.ts
 
-public/
-  scripts/
-    liquidGL.js           — liquidGL library (already downloaded)
-
+public/scripts/liquidGL.js
 tailwind.config.ts
 postcss.config.mjs
 next.config.mjs
@@ -63,17 +58,14 @@ next.config.mjs
 
 ---
 
-### Task 1: Scaffold — Clean slate + App Router + Tailwind + liquidGL scripts
+### Task 1: Scaffold — App Router + Tailwind + liquidGL + fonts
 
 **Files:**
-- Delete: `pages/`, `components/` (old), `lib/` (old), `styles/` (old), `site.config.ts`
-- Keep: `app/` (already partially created), `components/shader/` (already built), `public/scripts/liquidGL.js`
-- Create: `tailwind.config.ts`, `postcss.config.mjs`, `next.config.mjs`
-- Replace: `package.json`, `tsconfig.json`
-- Modify: `app/layout.tsx` (add liquidGL script loading)
-- Modify: `app/globals.css` (add glass fallback styles)
+- Delete: `pages/`, `styles/`, old `components/*` (keep `components/shader/` for now, remove later), old `lib/*`, `site.config.ts`, `next.config.js`
+- Create: `package.json`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`, `next.config.mjs`
+- Create: `app/layout.tsx`, `app/page.tsx`, `app/globals.css`, `app/shader.d.ts`
 
-- [ ] **Step 1: Create new package.json**
+- [ ] **Step 1: Write package.json**
 
 ```json
 {
@@ -87,9 +79,6 @@ next.config.mjs
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15",
-    "@react-three/fiber": "^8.17.0",
-    "@react-three/drei": "^9.114.0",
-    "three": "^0.169.0",
     "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -98,7 +87,6 @@ next.config.mjs
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "@types/three": "^0.169.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
@@ -107,22 +95,13 @@ next.config.mjs
 }
 ```
 
-- [ ] **Step 2: Delete old source directories**
+Note: No Three.js, no @react-three/* — major bundle reduction.
+
+- [ ] **Step 2: Delete old files**
 
 ```bash
-rm -rf pages/ styles/
+rm -rf pages/ styles/ components/ lib/
 rm -f site.config.ts next.config.js
-# Keep: app/, components/shader/, public/scripts/liquidGL.js, lib/ (will be replaced), docs/
-```
-
-Remove old components except shader:
-```bash
-rm -f components/Footer.tsx components/GitHubShareButton.tsx components/index.ts components/Loading.tsx components/LoadingIcon.tsx components/NotionPage.tsx components/NotionPageHeader.tsx components/Page404.tsx components/PageActions.tsx components/PageAside.tsx components/PageHead.tsx components/PageSocial.tsx components/PageSocial.module.css components/styles.module.css components/ErrorPage.tsx
-```
-
-Remove old lib files:
-```bash
-rm -f lib/acl.ts lib/bootstrap-client.ts lib/config.ts lib/db.ts lib/fonts.ts lib/get-canonical-page-id.ts lib/get-config-value.ts lib/get-page-tweet.ts lib/get-site-map.ts lib/get-social-image-url.ts lib/map-image-url.ts lib/map-page-url.ts lib/notion-api.ts lib/notion.ts lib/oembed.ts lib/preview-images.ts lib/resolve-notion-page.ts lib/search-notion.ts lib/site-config.ts lib/types.ts lib/use-dark-mode.ts
 ```
 
 - [ ] **Step 3: Create next.config.mjs**
@@ -139,13 +118,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'prod-files-secure.s3.us-west-2.amazonaws.com' },
     ],
     formats: ['image/avif', 'image/webp'],
-  },
-  webpack(config) {
-    config.module.rules.push({
-      test: /\.(frag|vert|glsl)$/,
-      type: 'asset/source',
-    })
-    return config
   },
   async redirects() {
     return [
@@ -208,6 +180,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         serif: ['var(--font-source-serif)', 'Georgia', 'serif'],
+        mono: ['var(--font-jetbrains)', 'monospace'],
       },
       borderRadius: {
         pill: '9999px',
@@ -223,7 +196,6 @@ export default config
 - [ ] **Step 6: Create postcss.config.mjs**
 
 ```js
-/** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
     tailwindcss: {},
@@ -234,7 +206,7 @@ const config = {
 export default config
 ```
 
-- [ ] **Step 7: Update app/globals.css**
+- [ ] **Step 7: Create app/globals.css**
 
 ```css
 @tailwind base;
@@ -251,27 +223,26 @@ export default config
   }
 }
 
-/* Liquid Glass CSS fallback (when WebGL unavailable or prefers-reduced-transparency) */
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass-fallback {
-    background: rgba(255, 255, 255, 0.12) !important;
-    backdrop-filter: blur(12px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-}
-
+/* Liquid Glass CSS fallback */
 .liquid-glass-fallback {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass-fallback {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(16px) saturate(160%);
+  }
+}
 ```
 
-- [ ] **Step 8: Update app/layout.tsx with liquidGL script loading**
+- [ ] **Step 8: Create app/layout.tsx**
 
 ```tsx
 import type { Metadata } from 'next'
-import { Inter, Source_Serif_4 } from 'next/font/google'
+import { Inter, Source_Serif_4, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
@@ -287,6 +258,12 @@ const sourceSerif = Source_Serif_4({
   display: 'swap',
 })
 
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: 'xikai()',
   description: 'Software engineer at Apple.',
@@ -299,7 +276,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sourceSerif.variable}`}>
+    <html lang="en" className={`${inter.variable} ${sourceSerif.variable} ${jetbrains.variable}`}>
       <body className="font-sans">
         {children}
         <Script
@@ -316,20 +293,7 @@ export default function RootLayout({
 }
 ```
 
-- [ ] **Step 9: Create app/shader.d.ts for GLSL imports**
-
-```ts
-declare module '*.frag' {
-  const value: string
-  export default value
-}
-declare module '*.vert' {
-  const value: string
-  export default value
-}
-```
-
-- [ ] **Step 10: Create placeholder app/page.tsx**
+- [ ] **Step 9: Create placeholder app/page.tsx**
 
 ```tsx
 export default function Home() {
@@ -341,14 +305,14 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 11: Install dependencies and verify build**
+- [ ] **Step 10: Install and build**
 
 ```bash
 npm install --legacy-peer-deps
 npx next build
 ```
 
-- [ ] **Step 12: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add -A
@@ -359,8 +323,7 @@ git commit -m "feat: scaffold App Router + Tailwind + liquidGL, remove old code"
 
 ### Task 2: Site config + Notion API client
 
-**Files:**
-- Create: `lib/config.ts`, `lib/notion.ts`, `lib/types.ts`
+**Files:** `lib/config.ts`, `lib/types.ts`, `lib/notion.ts`
 
 - [ ] **Step 1: Create lib/config.ts**
 
@@ -497,7 +460,7 @@ export async function getPhotos() {
 }
 ```
 
-- [ ] **Step 4: Verify TypeScript compiles**
+- [ ] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -512,14 +475,152 @@ git commit -m "feat: Notion API client and site config"
 
 ---
 
-### Task 3: Liquid Glass components
+### Task 3: Symbol Matrix + Scattered Words background
 
 **Files:**
-- Create: `components/glass/LiquidGlass.tsx`
-- Create: `components/glass/GlassPill.tsx`
+- Create: `components/hero/SymbolMatrix.tsx`
+- Create: `components/hero/ScatteredWords.tsx`
+
+- [ ] **Step 1: Create components/hero/SymbolMatrix.tsx**
+
+```tsx
+const SYMBOLS = [
+  // Code
+  '{}', '=>', '//', '&&', '||', '0x', 'fn', '++', '!=', '<<', '::', '[]', '()', '**',
+  // Math
+  '∑', '∂', '∫', 'π', '∞', 'Δ', 'λ', 'Ω', '√', '≈', '∈', '⊂',
+  // Unicode blocks
+  '░', '▓', '█', '◆', '●', '○', '◈', '▪', '▫', '◇', '△', '▽',
+  // Emoji/symbols
+  '📷', '🍎', '⌘', '✦', '⚡', '◎', '❋', '※',
+  // Fragments
+  'let', 'nil', 'pub', 'use', 'mut', 'def', 'new', 'var', 'async', 'self',
+]
+
+function seededRandom(seed: number) {
+  const x = Math.sin(seed) * 10000
+  return x - Math.floor(x)
+}
+
+export function SymbolMatrix() {
+  // Generate a deterministic grid of symbols
+  const cells: { symbol: string; opacity: number; size: string; rotate: number }[] = []
+
+  for (let i = 0; i < 400; i++) {
+    const r1 = seededRandom(i * 7 + 1)
+    const r2 = seededRandom(i * 13 + 2)
+    const r3 = seededRandom(i * 19 + 3)
+    const r4 = seededRandom(i * 31 + 4)
+
+    cells.push({
+      symbol: SYMBOLS[Math.floor(r1 * SYMBOLS.length)],
+      opacity: 0.04 + r2 * 0.08, // 0.04 to 0.12
+      size: `${0.55 + r3 * 0.7}rem`, // 0.55rem to 1.25rem
+      rotate: -8 + r4 * 16, // -8deg to +8deg
+    })
+  }
+
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden font-mono text-fg select-none pointer-events-none"
+      aria-hidden="true"
+    >
+      <div className="grid grid-cols-[repeat(20,1fr)] gap-0 w-full h-full place-items-center">
+        {cells.map((cell, i) => (
+          <span
+            key={i}
+            style={{
+              opacity: cell.opacity,
+              fontSize: cell.size,
+              transform: `rotate(${cell.rotate}deg)`,
+            }}
+          >
+            {cell.symbol}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+- [ ] **Step 2: Create components/hero/ScatteredWords.tsx**
+
+```tsx
+const WORDS = [
+  { text: 'code', x: '8%', y: '15%', size: '12vw', rotate: -12 },
+  { text: 'curiosity', x: '55%', y: '70%', size: '10vw', rotate: 8 },
+  { text: 'build', x: '70%', y: '20%', size: '9vw', rotate: -5 },
+  { text: 'xikai', x: '15%', y: '75%', size: '14vw', rotate: 15 },
+  { text: 'WWDC', x: '80%', y: '50%', size: '8vw', rotate: -18 },
+  { text: '∞', x: '40%', y: '85%', size: '11vw', rotate: 3 },
+]
+
+export function ScatteredWords() {
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden select-none pointer-events-none"
+      aria-hidden="true"
+    >
+      {WORDS.map((word, i) => (
+        <span
+          key={i}
+          className="absolute font-sans font-bold text-fg whitespace-nowrap"
+          style={{
+            left: word.x,
+            top: word.y,
+            fontSize: word.size,
+            transform: `rotate(${word.rotate}deg)`,
+            opacity: 0.03,
+          }}
+        >
+          {word.text}
+        </span>
+      ))}
+    </div>
+  )
+}
+```
+
+- [ ] **Step 3: Quick visual test — temporarily add to page.tsx**
+
+```tsx
+import { SymbolMatrix } from '@/components/hero/SymbolMatrix'
+import { ScatteredWords } from '@/components/hero/ScatteredWords'
+
+export default function Home() {
+  return (
+    <main className="relative flex h-screen items-center justify-center">
+      <SymbolMatrix />
+      <ScatteredWords />
+      <h1 className="text-4xl font-light tracking-tight z-10">xikai()</h1>
+    </main>
+  )
+}
+```
+
+```bash
+npx next dev -p 3001
+```
+
+Open http://localhost:3001 — should see dark bg with faint monospace characters and barely-visible large words behind the title.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/hero/
+git commit -m "feat: symbol matrix + scattered words hero background"
+```
+
+---
+
+### Task 4: Liquid Glass components
+
+**Files:**
+- Create: `components/glass/GlassPills.tsx`
 - Create: `components/glass/GlassNav.tsx`
 
-- [ ] **Step 1: Create components/glass/LiquidGlass.tsx**
+- [ ] **Step 1: Create components/glass/GlassPills.tsx**
 
 ```tsx
 'use client'
@@ -533,131 +634,29 @@ declare global {
   }
 }
 
-interface LiquidGlassProps {
-  children: React.ReactNode
-  className?: string
-  refraction?: number
-  bevelDepth?: number
-  bevelWidth?: number
-  frost?: number
-  specular?: boolean
-  shadow?: boolean
-  tilt?: boolean
-  tiltFactor?: number
-  reveal?: string
-}
+const NAV_LINKS = [
+  { id: 'writing', label: 'writing' },
+  { id: 'projects', label: 'projects' },
+  { id: 'photos', label: 'photos' },
+  { id: 'about', label: 'about' },
+]
 
-export function LiquidGlass({
-  children,
-  className = '',
-  refraction = 0.02,
-  bevelDepth = 0.08,
-  bevelWidth = 0.05,
-  frost = 0,
-  specular = true,
-  shadow = true,
-  tilt = false,
-  tiltFactor = 3,
-  reveal = 'fade',
-}: LiquidGlassProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const lensRef = useRef<any>(null)
+export function GlassPills() {
   const [glassReady, setGlassReady] = useState(false)
 
   useEffect(() => {
-    // Check for reduced transparency preference
-    const prefersReduced = window.matchMedia('(prefers-reduced-transparency: reduce)').matches
+    if (window.matchMedia('(prefers-reduced-transparency: reduce)').matches) return
 
-    if (prefersReduced || !window.liquidGL) {
-      // Use CSS fallback
-      return
-    }
+    const init = () => {
+      if (!window.liquidGL || !window.html2canvas) return
 
-    // Wait for liquidGL to be available
-    const initGlass = () => {
-      if (!window.liquidGL || !window.html2canvas || !ref.current) return
-
-      // Small delay to ensure DOM is painted
-      requestAnimationFrame(() => {
-        try {
-          lensRef.current = window.liquidGL({
-            target: ref.current,
-            resolution: 1.5,
-            refraction,
-            bevelDepth,
-            bevelWidth,
-            frost,
-            specular,
-            shadow,
-            tilt,
-            tiltFactor,
-            reveal,
-            magnify: 1,
-          })
-          setGlassReady(true)
-        } catch (e) {
-          console.warn('liquidGL init failed, using fallback', e)
-        }
-      })
-    }
-
-    // liquidGL might not be loaded yet (async script)
-    if (window.liquidGL && window.html2canvas) {
-      initGlass()
-    } else {
-      const check = setInterval(() => {
-        if (window.liquidGL && window.html2canvas) {
-          clearInterval(check)
-          initGlass()
-        }
-      }, 100)
-      return () => clearInterval(check)
-    }
-  }, [refraction, bevelDepth, bevelWidth, frost, specular, shadow, tilt, tiltFactor, reveal])
-
-  return (
-    <div
-      ref={ref}
-      className={`${className} ${!glassReady ? 'liquid-glass-fallback' : ''}`}
-      style={{ position: 'fixed' }}
-      data-liquid-ignore
-    >
-      <div data-liquid-ignore>{children}</div>
-    </div>
-  )
-}
-```
-
-- [ ] **Step 2: Create components/glass/GlassPill.tsx**
-
-```tsx
-'use client'
-
-import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
-
-interface GlassPillProps {
-  href: string
-  children: React.ReactNode
-}
-
-export function GlassPill({ href, children }: GlassPillProps) {
-  const ref = useRef<HTMLAnchorElement>(null)
-  const [glassReady, setGlassReady] = useState(false)
-
-  useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-transparency: reduce)').matches
-    if (prefersReduced) return
-
-    const initGlass = () => {
-      if (!window.liquidGL || !window.html2canvas || !ref.current) return
-
-      requestAnimationFrame(() => {
+      // Delay so DOM (symbol matrix) is fully painted before html2canvas snapshot
+      setTimeout(() => {
         try {
           window.liquidGL({
-            target: ref.current,
+            target: '.glass-pill',
             resolution: 1.5,
-            refraction: 0.02,
+            refraction: 0.025,
             bevelDepth: 0.1,
             bevelWidth: 0.06,
             frost: 0,
@@ -670,39 +669,49 @@ export function GlassPill({ href, children }: GlassPillProps) {
           })
           setGlassReady(true)
         } catch (e) {
-          console.warn('GlassPill init failed', e)
+          console.warn('GlassPills init failed', e)
         }
-      })
+      }, 300)
     }
 
     if (window.liquidGL && window.html2canvas) {
-      initGlass()
+      init()
     } else {
       const check = setInterval(() => {
         if (window.liquidGL && window.html2canvas) {
           clearInterval(check)
-          initGlass()
+          init()
         }
       }, 100)
       return () => clearInterval(check)
     }
   }, [])
 
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
-    <Link
-      ref={ref}
-      href={href}
-      className={`inline-flex items-center px-6 py-2.5 rounded-pill text-fg/80 hover:text-fg transition-colors text-lg tracking-wide min-h-[44px] ${!glassReady ? 'liquid-glass-fallback rounded-pill' : ''}`}
-      style={{ position: 'fixed' }}
-      data-liquid-ignore
-    >
-      <span data-liquid-ignore>{children}</span>
-    </Link>
+    <div className="flex flex-wrap justify-center gap-4">
+      {NAV_LINKS.map((link) => (
+        <button
+          key={link.id}
+          onClick={() => scrollTo(link.id)}
+          className={`glass-pill inline-flex items-center px-6 py-2.5 rounded-pill text-fg/80 hover:text-fg transition-colors text-lg tracking-wide min-h-[44px] ${
+            !glassReady ? 'liquid-glass-fallback rounded-pill' : ''
+          }`}
+          style={{ position: 'fixed' }}
+          data-liquid-ignore
+        >
+          <span data-liquid-ignore>{link.label}</span>
+        </button>
+      ))}
+    </div>
   )
 }
 ```
 
-- [ ] **Step 3: Create components/glass/GlassNav.tsx**
+- [ ] **Step 2: Create components/glass/GlassNav.tsx**
 
 ```tsx
 'use client'
@@ -727,13 +736,11 @@ export function GlassNav({ href, label }: GlassNavProps) {
   }, [])
 
   useEffect(() => {
-    if (!visible) return
+    if (!visible || glassReady) return
+    if (window.matchMedia('(prefers-reduced-transparency: reduce)').matches) return
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-transparency: reduce)').matches
-    if (prefersReduced) return
-
-    const initGlass = () => {
-      if (!window.liquidGL || !window.html2canvas || !ref.current || glassReady) return
+    const init = () => {
+      if (!window.liquidGL || !window.html2canvas || !ref.current) return
 
       requestAnimationFrame(() => {
         try {
@@ -758,12 +765,12 @@ export function GlassNav({ href, label }: GlassNavProps) {
     }
 
     if (window.liquidGL && window.html2canvas) {
-      initGlass()
+      init()
     } else {
       const check = setInterval(() => {
         if (window.liquidGL && window.html2canvas) {
           clearInterval(check)
-          initGlass()
+          init()
         }
       }, 100)
       return () => clearInterval(check)
@@ -774,7 +781,9 @@ export function GlassNav({ href, label }: GlassNavProps) {
     <Link
       ref={ref}
       href={href}
-      className={`fixed top-6 left-6 z-50 inline-flex items-center px-5 py-2 rounded-pill text-sm text-fg/70 hover:text-fg transition-all duration-300 min-h-[44px] ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'} ${!glassReady ? 'liquid-glass-fallback rounded-pill' : ''}`}
+      className={`fixed top-6 left-6 z-50 inline-flex items-center px-5 py-2 rounded-pill text-sm text-fg/70 hover:text-fg transition-all duration-300 min-h-[44px] ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
+      } ${!glassReady ? 'liquid-glass-fallback rounded-pill' : ''}`}
       data-liquid-ignore
     >
       <span data-liquid-ignore>← {label}</span>
@@ -783,28 +792,246 @@ export function GlassNav({ href, label }: GlassNavProps) {
 }
 ```
 
-- [ ] **Step 4: Verify build**
+- [ ] **Step 3: Verify build**
 
 ```bash
 npx tsc --noEmit && npx next build
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add components/glass/
-git commit -m "feat: Liquid Glass components (LiquidGlass, GlassPill, GlassNav)"
+git commit -m "feat: Liquid Glass components (GlassPills, GlassNav)"
 ```
 
 ---
 
-### Task 4: Notion block renderer
+### Task 5: Notion block renderer
 
-Same as original plan Task 3 — create `components/notion/renderer.tsx` and all block components. No changes needed from v1 plan. Refer to the code in the original Task 3 steps 1-12.
+**Files:** `components/notion/renderer.tsx` + all block components in `components/notion/blocks/`
 
-- [ ] **Steps 1-12: Create all block components and renderer.tsx** (same code as v1 plan Task 3)
+- [ ] **Step 1: Create components/notion/renderer.tsx**
 
-- [ ] **Step 13: Commit**
+```tsx
+import React from 'react'
+import { Paragraph } from './blocks/Paragraph'
+import { Heading1, Heading2, Heading3 } from './blocks/Heading'
+import { BulletedListItem } from './blocks/BulletedList'
+import { NumberedListItem } from './blocks/NumberedList'
+import { Code } from './blocks/Code'
+import { ImageBlock } from './blocks/Image'
+import { Quote } from './blocks/Quote'
+import { Callout } from './blocks/Callout'
+import { Divider } from './blocks/Divider'
+import { Bookmark } from './blocks/Bookmark'
+
+const blockComponents: Record<string, React.FC<{ block: any }>> = {
+  paragraph: Paragraph,
+  heading_1: Heading1,
+  heading_2: Heading2,
+  heading_3: Heading3,
+  bulleted_list_item: BulletedListItem,
+  numbered_list_item: NumberedListItem,
+  code: Code,
+  image: ImageBlock,
+  quote: Quote,
+  callout: Callout,
+  divider: Divider,
+  bookmark: Bookmark,
+}
+
+export function NotionBlockRenderer({ block }: { block: any }) {
+  const Component = blockComponents[block.type]
+  if (!Component) {
+    const richText = block[block.type]?.rich_text
+    if (richText) {
+      return <p className="my-4 font-serif text-muted">{renderRichText(richText)}</p>
+    }
+    return null
+  }
+  return <Component block={block} />
+}
+
+export function NotionRenderer({ blocks }: { blocks: any[] }) {
+  return (
+    <div>
+      {blocks.map((block) => (
+        <NotionBlockRenderer key={block.id} block={block} />
+      ))}
+    </div>
+  )
+}
+
+export function renderRichText(richTexts: any[]): React.ReactNode {
+  if (!richTexts?.length) return null
+
+  return richTexts.map((text: any, i: number) => {
+    const { annotations, plain_text, href } = text
+    let content: React.ReactNode = plain_text
+
+    if (annotations.bold) content = <strong>{content}</strong>
+    if (annotations.italic) content = <em>{content}</em>
+    if (annotations.strikethrough) content = <s>{content}</s>
+    if (annotations.code) {
+      content = (
+        <code className="bg-neutral-800 px-1.5 py-0.5 text-sm font-mono text-neutral-300">
+          {content}
+        </code>
+      )
+    }
+    if (annotations.underline) content = <u>{content}</u>
+
+    if (href) {
+      content = (
+        <a href={href} target="_blank" rel="noopener noreferrer"
+          className="border-b border-muted/40 hover:border-fg transition-colors">
+          {content}
+        </a>
+      )
+    }
+
+    return <React.Fragment key={i}>{content}</React.Fragment>
+  })
+}
+```
+
+- [ ] **Step 2: Create all block components**
+
+Create each file in `components/notion/blocks/`:
+
+`Paragraph.tsx`:
+```tsx
+import { renderRichText } from '../renderer'
+
+export function Paragraph({ block }: { block: any }) {
+  return <p className="my-4 leading-relaxed font-serif">{renderRichText(block.paragraph.rich_text)}</p>
+}
+```
+
+`Heading.tsx`:
+```tsx
+import { renderRichText } from '../renderer'
+
+export function Heading1({ block }: { block: any }) {
+  return <h1 className="mt-12 mb-4 text-3xl font-sans font-semibold tracking-tight">{renderRichText(block.heading_1.rich_text)}</h1>
+}
+
+export function Heading2({ block }: { block: any }) {
+  return <h2 className="mt-10 mb-3 text-2xl font-sans font-medium tracking-tight">{renderRichText(block.heading_2.rich_text)}</h2>
+}
+
+export function Heading3({ block }: { block: any }) {
+  return <h3 className="mt-8 mb-2 text-xl font-sans font-medium tracking-tight">{renderRichText(block.heading_3.rich_text)}</h3>
+}
+```
+
+`BulletedList.tsx`:
+```tsx
+import { renderRichText, NotionBlockRenderer } from '../renderer'
+
+export function BulletedListItem({ block }: { block: any }) {
+  return (
+    <li className="my-1 ml-6 list-disc font-serif leading-relaxed">
+      {renderRichText(block.bulleted_list_item.rich_text)}
+      {block.children && <ul className="mt-1">{block.children.map((child: any) => <NotionBlockRenderer key={child.id} block={child} />)}</ul>}
+    </li>
+  )
+}
+```
+
+`NumberedList.tsx`:
+```tsx
+import { renderRichText, NotionBlockRenderer } from '../renderer'
+
+export function NumberedListItem({ block }: { block: any }) {
+  return (
+    <li className="my-1 ml-6 list-decimal font-serif leading-relaxed">
+      {renderRichText(block.numbered_list_item.rich_text)}
+      {block.children && <ol className="mt-1">{block.children.map((child: any) => <NotionBlockRenderer key={child.id} block={child} />)}</ol>}
+    </li>
+  )
+}
+```
+
+`Code.tsx`:
+```tsx
+export function Code({ block }: { block: any }) {
+  const code = block.code.rich_text.map((t: any) => t.plain_text).join('')
+  return (
+    <pre className="my-6 overflow-x-auto border border-neutral-800 bg-neutral-900 p-4">
+      <code className="text-sm font-mono text-neutral-300 leading-relaxed">{code}</code>
+    </pre>
+  )
+}
+```
+
+`Image.tsx`:
+```tsx
+export function ImageBlock({ block }: { block: any }) {
+  const src = block.image.type === 'external' ? block.image.external.url : block.image.file.url
+  const caption = block.image.caption?.[0]?.plain_text ?? ''
+  return (
+    <figure className="my-8">
+      <img src={src} alt={caption} className="w-full" loading="lazy" />
+      {caption && <figcaption className="mt-2 text-center text-sm text-muted">{caption}</figcaption>}
+    </figure>
+  )
+}
+```
+
+`Quote.tsx`:
+```tsx
+import { renderRichText } from '../renderer'
+
+export function Quote({ block }: { block: any }) {
+  return <blockquote className="my-6 border-l-2 border-muted pl-4 italic font-serif text-muted">{renderRichText(block.quote.rich_text)}</blockquote>
+}
+```
+
+`Callout.tsx`:
+```tsx
+import { renderRichText } from '../renderer'
+
+export function Callout({ block }: { block: any }) {
+  const icon = block.callout.icon?.emoji ?? ''
+  return (
+    <div className="my-4 flex gap-3 border border-neutral-800 p-4">
+      {icon && <span className="text-lg shrink-0">{icon}</span>}
+      <div className="font-serif leading-relaxed">{renderRichText(block.callout.rich_text)}</div>
+    </div>
+  )
+}
+```
+
+`Divider.tsx`:
+```tsx
+export function Divider() {
+  return <hr className="my-8 border-neutral-800" />
+}
+```
+
+`Bookmark.tsx`:
+```tsx
+export function Bookmark({ block }: { block: any }) {
+  const url = block.bookmark.url
+  const caption = block.bookmark.caption?.[0]?.plain_text ?? url
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="my-4 block border border-neutral-800 p-4 text-sm text-muted hover:border-fg/30 transition-colors">
+      {caption}
+    </a>
+  )
+}
+```
+
+- [ ] **Step 3: Verify build**
+
+```bash
+npx tsc --noEmit && npx next build
+```
+
+- [ ] **Step 4: Commit**
 
 ```bash
 git add components/notion/
@@ -813,26 +1040,22 @@ git commit -m "feat: custom Notion block renderer"
 
 ---
 
-### Task 5: Landing page — Hero + Glass pills + Content sections
+### Task 6: Landing page — full assembly
 
-**Files:**
-- Modify: `app/page.tsx` — full single-page layout with shader hero, glass entry pills, writing/projects/photos sections
+**Files:** `app/page.tsx`
 
-- [ ] **Step 1: Update app/page.tsx**
+- [ ] **Step 1: Write app/page.tsx**
 
 ```tsx
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { getBlogPosts, getProjects, getPhotos } from '@/lib/notion'
 import { siteConfig } from '@/lib/config'
-
-const HeroScene = dynamic(
-  () => import('@/components/shader/HeroScene').then((m) => m.HeroScene),
-  { ssr: false }
-)
+import { SymbolMatrix } from '@/components/hero/SymbolMatrix'
+import { ScatteredWords } from '@/components/hero/ScatteredWords'
 
 const GlassPills = dynamic(
-  () => import('./GlassPills').then((m) => m.GlassPills),
+  () => import('@/components/glass/GlassPills').then((m) => m.GlassPills),
   { ssr: false }
 )
 
@@ -847,18 +1070,19 @@ export default async function Home() {
 
   return (
     <main>
-      {/* Hero Section */}
-      <section className="relative flex h-screen flex-col items-center justify-center px-6">
-        <HeroScene />
+      {/* Hero */}
+      <section className="relative flex h-screen flex-col items-center justify-center px-6 overflow-hidden">
+        <SymbolMatrix />
+        <ScatteredWords />
+
         <div className="text-center z-10" data-liquid-ignore>
           <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4" data-liquid-ignore>
-            hi, i'm xikai
+            xikai()
           </h1>
           <p className="text-lg text-muted max-w-md mx-auto mb-10" data-liquid-ignore>
-            software engineer, building things out of curiosity.
+            software engineer. building things with code.
           </p>
 
-          {/* Glass pill navigation */}
           <GlassPills />
 
           <div className="flex justify-center gap-6 text-sm text-muted mt-10" data-liquid-ignore>
@@ -867,22 +1091,20 @@ export default async function Home() {
             <a href="mailto:realxikai@gmail.com" className="hover:text-fg transition-colors">Email</a>
           </div>
         </div>
+
         <div className="absolute bottom-8 text-muted/40 text-xs tracking-widest animate-pulse" data-liquid-ignore>
           scroll
         </div>
       </section>
 
-      {/* Writing Section */}
+      {/* Writing */}
       {posts.length > 0 && (
-        <section className="mx-auto max-w-reading px-6 py-24">
+        <section id="writing" className="mx-auto max-w-reading px-6 py-24">
           <h2 className="text-2xl font-light tracking-tight mb-10 text-muted">writing</h2>
           <div className="flex flex-col">
             {posts.map((post) => (
-              <Link
-                key={post.id}
-                href={`/writing/${post.slug}`}
-                className="group flex items-baseline justify-between gap-4 py-3 border-b border-neutral-800/50"
-              >
+              <Link key={post.id} href={`/writing/${post.slug}`}
+                className="group flex items-baseline justify-between gap-4 py-3 border-b border-neutral-800/50">
                 <span className="text-fg group-hover:text-white transition-colors">{post.title}</span>
                 {post.published && (
                   <span className="shrink-0 text-sm text-muted tabular-nums">
@@ -895,9 +1117,9 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Projects Section */}
+      {/* Projects */}
       {projects.length > 0 && (
-        <section className="mx-auto max-w-grid px-6 py-24">
+        <section id="projects" className="mx-auto max-w-grid px-6 py-24">
           <h2 className="text-2xl font-light tracking-tight mb-10 text-muted">projects</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {projects.map((project, i) => {
@@ -914,9 +1136,9 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Photos Section */}
+      {/* Photos */}
       {photos.length > 0 && (
-        <section className="mx-auto max-w-4xl px-6 py-24">
+        <section id="photos" className="mx-auto max-w-4xl px-6 py-24">
           <h2 className="text-2xl font-light tracking-tight mb-10 text-muted">photos</h2>
           <div className="columns-2 gap-4">
             {photos.map((photo, i) => (
@@ -928,6 +1150,19 @@ export default async function Home() {
         </section>
       )}
 
+      {/* About */}
+      <section id="about" className="mx-auto max-w-lg px-6 py-24 text-center">
+        <p className="text-xl leading-relaxed mb-6">
+          Software engineer at Apple. Previously TikTok, Meituan.
+        </p>
+        <p className="text-xl leading-relaxed mb-6">
+          Two-time WWDC Swift Student Challenge winner.
+        </p>
+        <p className="text-xl leading-relaxed text-muted">
+          I build things with code.
+        </p>
+      </section>
+
       {/* Footer */}
       <footer className="py-16 text-center text-sm text-muted/50">
         xikai()
@@ -937,117 +1172,26 @@ export default async function Home() {
 }
 ```
 
-- [ ] **Step 2: Create app/GlassPills.tsx — client component for the glass entry links**
-
-```tsx
-'use client'
-
-import { useEffect, useRef, useState } from 'react'
-
-const links = [
-  { href: '#writing', label: 'writing' },
-  { href: '#projects', label: 'projects' },
-  { href: '#photos', label: 'photos' },
-  { href: '#about', label: 'about' },
-]
-
-export function GlassPills() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [glassReady, setGlassReady] = useState(false)
-
-  useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-transparency: reduce)').matches
-    if (prefersReduced) return
-
-    const initGlass = () => {
-      if (!window.liquidGL || !window.html2canvas || !containerRef.current) return
-
-      // liquidGL needs elements to exist in DOM, give it a frame
-      requestAnimationFrame(() => {
-        try {
-          const targets = containerRef.current?.querySelectorAll('.glass-pill')
-          if (targets?.length) {
-            window.liquidGL({
-              target: '.glass-pill',
-              resolution: 1.5,
-              refraction: 0.025,
-              bevelDepth: 0.1,
-              bevelWidth: 0.06,
-              frost: 0,
-              specular: true,
-              shadow: true,
-              tilt: true,
-              tiltFactor: 3,
-              reveal: 'fade',
-              magnify: 1,
-            })
-            setGlassReady(true)
-          }
-        } catch (e) {
-          console.warn('GlassPills init failed', e)
-        }
-      })
-    }
-
-    if (window.liquidGL && window.html2canvas) {
-      // Delay to ensure shader has rendered for snapshot
-      setTimeout(initGlass, 500)
-    } else {
-      const check = setInterval(() => {
-        if (window.liquidGL && window.html2canvas) {
-          clearInterval(check)
-          setTimeout(initGlass, 500)
-        }
-      }, 100)
-      return () => clearInterval(check)
-    }
-  }, [])
-
-  const scrollTo = (hash: string) => {
-    const el = document.querySelector(hash)
-    el?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  return (
-    <div ref={containerRef} className="flex flex-wrap justify-center gap-4">
-      {links.map((link) => (
-        <button
-          key={link.href}
-          onClick={() => scrollTo(link.href)}
-          className={`glass-pill inline-flex items-center px-6 py-2.5 rounded-pill text-fg/80 hover:text-fg transition-colors text-lg tracking-wide min-h-[44px] ${!glassReady ? 'liquid-glass-fallback rounded-pill' : ''}`}
-          data-liquid-ignore
-        >
-          <span data-liquid-ignore>{link.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-```
-
-Note: Add `id="writing"`, `id="projects"`, `id="photos"`, `id="about"` to each section in page.tsx accordingly.
-
-- [ ] **Step 3: Verify dev server — shader hero + glass pills render**
+- [ ] **Step 2: Dev server test**
 
 ```bash
 npx next dev -p 3001
 ```
 
-Open http://localhost:3001 — should see shader background with glass capsule pills refracting the noise through them.
+Open http://localhost:3001 — symbol matrix behind glass pills, content sections below.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add app/page.tsx app/GlassPills.tsx
-git commit -m "feat: landing page with shader hero + liquid glass pills + content sections"
+git add app/page.tsx
+git commit -m "feat: landing page — glass pills over symbol matrix + content sections"
 ```
 
 ---
 
-### Task 6: Article detail page with glass back-nav
+### Task 7: Article detail page with glass back-nav
 
-**Files:**
-- Create: `app/writing/[slug]/page.tsx`
+**Files:** `app/writing/[slug]/page.tsx`
 
 - [ ] **Step 1: Create app/writing/[slug]/page.tsx**
 
@@ -1081,7 +1225,6 @@ export default async function ArticlePage({
   return (
     <>
       <GlassNav href="/" label="xikai()" />
-
       <main className="mx-auto max-w-reading px-6 py-24">
         <article className="mt-8">
           <NotionRenderer blocks={page.blocks} />
@@ -1099,18 +1242,16 @@ npx next build
 npx next dev -p 3001
 ```
 
-Navigate to a writing link from the landing page. Glass back-nav pill should appear on scroll with frosted refraction of the article content.
-
 - [ ] **Step 3: Commit**
 
 ```bash
 git add app/writing/
-git commit -m "feat: article detail page with liquid glass back-nav"
+git commit -m "feat: article page with liquid glass back-nav"
 ```
 
 ---
 
-### Task 7: Final cleanup + build verification + deploy
+### Task 8: Final cleanup + deploy
 
 - [ ] **Step 1: Create .env.example**
 
@@ -1118,39 +1259,37 @@ git commit -m "feat: article detail page with liquid glass back-nav"
 NOTION_TOKEN=your_notion_integration_token_here
 ```
 
-- [ ] **Step 2: Full build**
+- [ ] **Step 2: Remove leftover shader files (no longer needed)**
+
+```bash
+rm -rf components/shader/
+```
+
+- [ ] **Step 3: Full build**
 
 ```bash
 npx next build
 ```
 
-All pages should generate successfully.
-
-- [ ] **Step 3: Dev server smoke test**
+- [ ] **Step 4: Smoke test**
 
 ```bash
 npx next dev -p 3001
 ```
 
-Verify:
-- `/` — shader hero + glass pills + content sections
-- `/writing/[slug]` — article with glass back-nav
-- Scroll behavior, glass refraction, shader animation all working
+- `/` — symbol matrix + glass pills + sections
+- `/writing/[slug]` — article + glass back-nav
+- Glass refraction visible through pills
 
-- [ ] **Step 4: Commit everything**
+- [ ] **Step 5: Commit + push**
 
 ```bash
 git add -A
-git commit -m "chore: cleanup and finalize liquid glass redesign"
-```
-
-- [ ] **Step 5: Push and deploy**
-
-```bash
+git commit -m "chore: finalize liquid glass redesign, remove shader"
 git push origin master
 ```
 
-Set `NOTION_TOKEN` in Vercel project settings → Environment Variables.
+Set `NOTION_TOKEN` in Vercel → Environment Variables.
 
 ---
 
@@ -1158,17 +1297,17 @@ Set `NOTION_TOKEN` in Vercel project settings → Environment Variables.
 
 | Task | What it builds |
 |------|---------------|
-| 1 | Scaffold: clean slate + App Router + Tailwind + liquidGL scripts |
-| 2 | Notion API client + site config |
-| 3 | Liquid Glass components (LiquidGlass, GlassPill, GlassNav) |
-| 4 | Custom Notion block renderer (same as v1) |
-| 5 | Landing page: shader hero + glass pills + writing/projects/photos sections |
-| 6 | Article detail page with floating glass back-nav |
-| 7 | Cleanup + build + deploy |
+| 1 | Scaffold: App Router + Tailwind + liquidGL + 3 fonts |
+| 2 | Notion API client + config |
+| 3 | Symbol matrix + scattered words background |
+| 4 | Liquid Glass components (GlassPills, GlassNav) |
+| 5 | Notion block renderer (10 block types) |
+| 6 | Landing page: full assembly |
+| 7 | Article detail with glass back-nav |
+| 8 | Cleanup + deploy |
 
-**Key HIG compliance:**
-- Glass only on navigation chrome (pills, back-nav), never on content
-- Capsule shapes with 44px min touch targets
-- CSS fallback for `prefers-reduced-transparency`
-- One glass sheet per view
-- `data-liquid-ignore` on text to exclude from snapshot
+**Key decisions:**
+- No Three.js — removed entirely. Symbol matrix is pure DOM, ~0 JS
+- liquidGL is the only WebGL on the page — clean html2canvas capture
+- Glass only on navigation (pills, back-nav) per Apple HIG
+- JetBrains Mono for the matrix, Inter for UI, Source Serif for reading
