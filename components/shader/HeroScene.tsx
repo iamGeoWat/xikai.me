@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import vertexShader from './hero.vert'
@@ -23,7 +23,6 @@ function ShaderPlane({ onFrame }: { onFrame?: (gl: THREE.WebGLRenderer) => void 
     uniforms.current.uMouse.value.lerp(mouseRef.current, 0.05)
     uniforms.current.uResolution.value.set(size.width, size.height)
 
-    // Copy to 2D mirror every 3 frames for liquidGL to capture
     frameCount.current++
     if (frameCount.current % 3 === 0 && onFrame) {
       onFrame(gl)
@@ -49,20 +48,37 @@ function ShaderPlane({ onFrame }: { onFrame?: (gl: THREE.WebGLRenderer) => void 
 }
 
 export function HeroScene() {
-  const mirrorRef = useRef<HTMLCanvasElement>(null)
+  const bgApplied = useRef(false)
 
   const handleFrame = useCallback((gl: THREE.WebGLRenderer) => {
-    const mirror = mirrorRef.current
-    if (!mirror) return
-    const src = gl.domElement
-    // Match dimensions
-    if (mirror.width !== src.width || mirror.height !== src.height) {
-      mirror.width = src.width
-      mirror.height = src.height
-    }
-    const ctx = mirror.getContext('2d')
-    if (ctx) {
-      ctx.drawImage(src, 0, 0)
+    // After a few frames, capture the shader as a static image
+    // and set it as the body background so liquidGL can see it
+    // at ALL scroll positions (not just the first viewport)
+    if (bgApplied.current) return
+
+    const canvas = gl.domElement
+    if (canvas.width === 0 || canvas.height === 0) return
+
+    try {
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+      // Set on a full-page div instead of body, so html2canvas captures it
+      // at every scroll position. The real shader (fixed canvas) is the visual bg.
+      let bgDiv = document.getElementById('shader-bg-static')
+      if (!bgDiv) {
+        bgDiv = document.createElement('div')
+        bgDiv.id = 'shader-bg-static'
+        bgDiv.style.cssText = `
+          position: absolute; top: 0; left: 0; width: 100%; height: ${document.body.scrollHeight}px;
+          z-index: -1; pointer-events: none;
+          background-image: url(${dataUrl});
+          background-size: 100vw 100vh;
+          background-repeat: repeat;
+        `
+        document.body.prepend(bgDiv)
+      }
+      bgApplied.current = true
+    } catch (_) {
+      // Ignore cross-origin errors
     }
   }, [])
 
@@ -79,21 +95,6 @@ export function HeroScene() {
           <ShaderPlane onFrame={handleFrame} />
         </Canvas>
       </div>
-
-      {/* 2D mirror canvas — NOT fixed, capturable by html2canvas for liquidGL */}
-      <canvas
-        ref={mirrorRef}
-        id="shader-mirror"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      />
     </>
   )
 }
