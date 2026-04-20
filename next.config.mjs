@@ -1,12 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack(config) {
-    config.module.rules.push({
-      test: /\.(frag|vert|glsl)$/,
-      type: 'asset/source',
-    })
-    return config
-  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'www.notion.so' },
@@ -14,6 +7,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 's3.us-west-2.amazonaws.com' },
       { protocol: 'https', hostname: 'prod-files-secure.s3.us-west-2.amazonaws.com' },
+      { protocol: 'https', hostname: 'plus.unsplash.com' },
     ],
     formats: ['image/avif', 'image/webp'],
   },
@@ -21,7 +15,7 @@ const nextConfig = {
     return [
       {
         source: '/resume',
-        destination: 'https://drive.google.com/file/d/1vDNRGYird41cEnu8WIMDNabUQuELGvRH',
+        destination: 'https://drive.google.com/file/d/1u4c0i5rMtFDIW9P5qVgJb-Nxg5FVr0Dl/view',
         permanent: true,
       },
     ]

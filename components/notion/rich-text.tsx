@@ -1,73 +1,76 @@
 import React from 'react'
+import type { Decoration } from 'notion-types'
 
-interface RichTextItem {
-  type: string
-  plain_text: string
-  href: string | null
-  annotations: {
-    bold: boolean
-    italic: boolean
-    strikethrough: boolean
-    underline: boolean
-    code: boolean
-  }
-}
+export function RichText({ decorations }: { decorations?: Decoration[] }) {
+  if (!decorations) return null
 
-export function renderRichText(richTexts: RichTextItem[] | undefined) {
-  if (!richTexts || richTexts.length === 0) return null
+  return (
+    <>
+      {decorations.map((decoration, i) => {
+        const [text, formats] = decoration
+        if (!text) return null
 
-  return richTexts.map((rt, i) => {
-    let el: React.ReactNode = rt.plain_text
+        let element: React.ReactNode = text
 
-    if (rt.annotations.code) {
-      el = (
-        <code
-          key={`code-${i}`}
-          className="rounded-none bg-neutral-800 px-1.5 py-0.5 font-mono text-sm text-fg"
-        >
-          {el}
-        </code>
-      )
-    }
+        if (formats) {
+          for (const format of formats) {
+            const type = format[0]
 
-    if (rt.annotations.bold) {
-      el = (
-        <strong key={`bold-${i}`} className="font-semibold">
-          {el}
-        </strong>
-      )
-    }
+            switch (type) {
+              case 'b':
+                element = <strong key={`b-${i}`} className="font-medium">{element}</strong>
+                break
+              case 'i':
+                element = <em key={`i-${i}`} className="italic">{element}</em>
+                break
+              case 's':
+                element = <s key={`s-${i}`}>{element}</s>
+                break
+              case '_':
+                element = <span key={`u-${i}`} className="underline underline-offset-2">{element}</span>
+                break
+              case 'c':
+                element = (
+                  <code
+                    key={`c-${i}`}
+                    className="bg-paperAlt/60 border border-rule px-1.5 py-0.5 text-[0.9em] font-mono"
+                  >
+                    {element}
+                  </code>
+                )
+                break
+              case 'a': {
+                const href = format[1] as string
+                element = (
+                  <a
+                    key={`a-${i}`}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-mute/40 underline-offset-[3px] hover:decoration-ink transition-colors"
+                  >
+                    {element}
+                  </a>
+                )
+                break
+              }
+              case 'h': {
+                const color = format[1] as string
+                if (color?.includes('_background')) {
+                  element = (
+                    <span key={`h-${i}`} className="bg-paperAlt/80 px-0.5">
+                      {element}
+                    </span>
+                  )
+                }
+                break
+              }
+            }
+          }
+        }
 
-    if (rt.annotations.italic) {
-      el = <em key={`italic-${i}`}>{el}</em>
-    }
-
-    if (rt.annotations.strikethrough) {
-      el = <s key={`strike-${i}`}>{el}</s>
-    }
-
-    if (rt.annotations.underline) {
-      el = (
-        <span key={`underline-${i}`} className="underline">
-          {el}
-        </span>
-      )
-    }
-
-    if (rt.href) {
-      el = (
-        <a
-          key={`link-${i}`}
-          href={rt.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="border-b border-muted/50 transition-colors duration-200 hover:border-fg"
-        >
-          {el}
-        </a>
-      )
-    }
-
-    return <React.Fragment key={i}>{el}</React.Fragment>
-  })
+        return <React.Fragment key={i}>{element}</React.Fragment>
+      })}
+    </>
+  )
 }

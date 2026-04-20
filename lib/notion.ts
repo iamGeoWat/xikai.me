@@ -1,161 +1,151 @@
-import { Client } from '@notionhq/client'
-import { siteConfig } from '@/lib/config'
-import type { BlogPost, Project } from '@/lib/types'
+import { NotionAPI } from 'notion-client'
+import {
+  getTextContent,
+  getPageProperty,
+  getDateValue,
+  idToUuid,
+} from 'notion-utils'
+import type { ExtendedRecordMap, Block } from 'notion-types'
+import { siteConfig } from './site-config'
+import type { BlogPost, Project } from './types'
 
-const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
-})
+const api = new NotionAPI()
 
-// ---------------------------------------------------------------------------
-// Blog Posts
-// ---------------------------------------------------------------------------
+export async function getPage(pageId: string): Promise<ExtendedRecordMap> {
+  return api.getPage(pageId)
+}
+
+/** notion-client v7 double-wraps records as { value: { value: ... } }. Unwrap safely. */
+function unwrap<T = any>(entry: any): T | undefined {
+  if (!entry) return undefined
+  const first = entry.value ?? entry
+  if (
+    first &&
+    typeof first === 'object' &&
+    'value' in first &&
+    !('type' in first) &&
+    !('schema' in first)
+  ) {
+    return first.value as T
+  }
+  return first as T
+}
+
+function getBlockValue(recordMap: ExtendedRecordMap, blockId: string): Block | undefined {
+  return unwrap<Block>(recordMap.block[blockId])
+}
+
+function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/['']/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
 
 export async function getBlogPosts(): Promise<BlogPost[]> {
-  const response = await notion.databases.query({
-    database_id: siteConfig.blogDatabaseId,
-    filter: {
-      property: 'Public',
-      checkbox: { equals: true },
-    },
-    sorts: [
-      { property: 'Published', direction: 'descending' },
-    ],
-  })
+  const recordMap = await getPage(siteConfig.rootPageId)
 
-  return response.results.map((page) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const props = (page as any).properties
-    return {
-      id: page.id,
-      title: props.Name?.title?.[0]?.plain_text ?? '',
-      slug: props.Slug?.rich_text?.[0]?.plain_text ?? '',
-      description: props.Description?.rich_text?.[0]?.plain_text ?? '',
-      published: props.Published?.date?.start ?? null,
-      tags: props.Tags?.multi_select?.map((t: { name: string }) => t.name) ?? [],
-      isPublic: props.Public?.checkbox ?? false,
-    }
-  })
-}
+  const collectionId = Object.keys(recordMap.collection ?? {})[0]
+  if (!collectionId) return []
 
-export async function getPageBySlug(
-  slug: string,
-): Promise<{ id: string; blocks: any[] } | null> {
-  const response = await notion.databases.query({
-    database_id: siteConfig.blogDatabaseId,
-    filter: {
-      and: [
-        { property: 'Slug', rich_text: { equals: slug } },
-        { property: 'Public', checkbox: { equals: true } },
-      ],
-    },
-    page_size: 1,
-  })
+  const viewId = Object.keys(recordMap.collection_view ?? {})[0]
+  const blockIds =
+    recordMap.collection_query?.[collectionId]?.[viewId]?.collection_group_results?.blockIds ??
+    (recordMap.collection_query?.[collectionId]?.[viewId] as any)?.blockIds ??
+    []
 
-  const page = response.results[0]
-  if (!page) return null
+  const posts: BlogPost[] = []
 
-  const blocks = await getPageBlocks(page.id)
-  return { id: page.id, blocks }
-}
+  for (const blockId of blockIds) {
+    const block = getBlockValue(recordMap, blockId)
+    if (!block) continue
 
-// ---------------------------------------------------------------------------
-// Blocks (recursive)
-// ---------------------------------------------------------------------------
+    const title = getTextContent(block.properties?.title) || ''
+    if (!title) continue
 
-export async function getPageBlocks(pageId: string): Promise<any[]> {
-  const blocks: any[] = []
-  let cursor: string | undefined
+    const isPublic = getPageProperty<boolean>('Public', block, recordMap)
+    if (!isPublic) continue
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const response = await notion.blocks.children.list({
-      block_id: pageId,
-      start_cursor: cursor,
-      page_size: 100,
-    })
+    const rawSlug = getPageProperty<string>('Slug', block, recordMap)
+    const slug = rawSlug?.trim() || slugify(title)
+    const description = getPageProperty<string>('Description', block, recordMap) || ''
+    const tagsRaw = getPageProperty<string[]>('Tags', block, recordMap) as unknown
+    const tags: string[] = Array.isArray(tagsRaw)
+      ? (tagsRaw as string[])
+      : typeof tagsRaw === 'string'
+        ? (tagsRaw as string).split(',').map((t) => t.trim()).filter(Boolean)
+        : []
+    const featured = getPageProperty<boolean>('Featured', block, recordMap) || false
 
-    for (const block of response.results) {
-      const b = block as any
-      if (b.has_children) {
-        b.children = await getPageBlocks(b.id)
+    const publishedRaw = getPageProperty<any>('Published', block, recordMap)
+    let published: string | null = null
+    if (publishedRaw) {
+      const dateVal = getDateValue(publishedRaw)
+      if (dateVal?.type === 'date' && dateVal.start_date) {
+        published = dateVal.start_date
+      } else if (typeof publishedRaw === 'string') {
+        published = publishedRaw
       }
-      blocks.push(b)
     }
 
-    if (!response.has_more) break
-    cursor = response.next_cursor ?? undefined
+    posts.push({ id: blockId, title, slug, description, published, tags, featured })
   }
 
-  return blocks
+  posts.sort((a, b) => {
+    if (!a.published) return 1
+    if (!b.published) return -1
+    return b.published.localeCompare(a.published)
+  })
+
+  return posts
 }
 
-/** Alias for getPageBlocks */
-export const getPageContent = getPageBlocks
-
-// ---------------------------------------------------------------------------
-// Projects
-// ---------------------------------------------------------------------------
-
 export async function getProjects(): Promise<Project[]> {
-  const children = await getPageBlocks(siteConfig.projectsPageId)
+  const recordMap = await getPage(siteConfig.projectsPageId)
+
+  // Projects live in an embedded collection view on the projects page
+  const collectionId = Object.keys(recordMap.collection ?? {})[0]
+  if (!collectionId) return []
+
+  const viewId = Object.keys(recordMap.collection_view ?? {})[0]
+  const blockIds =
+    recordMap.collection_query?.[collectionId]?.[viewId]?.collection_group_results?.blockIds ??
+    (recordMap.collection_query?.[collectionId]?.[viewId] as any)?.blockIds ??
+    []
 
   const projects: Project[] = []
 
-  for (const child of children) {
-    if (child.type !== 'child_page') continue
+  for (const blockId of blockIds) {
+    const block = getBlockValue(recordMap, blockId)
+    if (!block) continue
 
-    const blocks = await getPageBlocks(child.id)
+    const title = getTextContent(block.properties?.title) || ''
+    if (!title) continue
 
-    let description = ''
-    let url: string | null = null
+    const description = getPageProperty<string>('Description', block, recordMap) || ''
 
-    for (const block of blocks) {
-      if (
-        block.type === 'paragraph' &&
-        !description &&
-        block.paragraph?.rich_text?.length
-      ) {
-        description = block.paragraph.rich_text
-          .map((t: { plain_text: string }) => t.plain_text)
-          .join('')
-      }
-      if (block.type === 'bookmark' && block.bookmark?.url) {
-        url = block.bookmark.url
-      }
-    }
+    // Try common URL/link properties
+    const url =
+      getPageProperty<string>('URL', block, recordMap) ||
+      getPageProperty<string>('Link', block, recordMap) ||
+      getPageProperty<string>('Github', block, recordMap) ||
+      null
 
-    projects.push({
-      id: child.id,
-      title: child.child_page?.title ?? '',
-      description,
-      url,
-    })
+    projects.push({ id: blockId, title, description, url })
   }
 
   return projects
 }
 
-// ---------------------------------------------------------------------------
-// Photos
-// ---------------------------------------------------------------------------
+export async function getArticlePage(slug: string) {
+  const posts = await getBlogPosts()
+  const post = posts.find((p) => p.slug === slug)
+  if (!post) return null
 
-export async function getPhotos(): Promise<
-  { src: string; alt: string }[]
-> {
-  const blocks = await getPageBlocks(siteConfig.photosPageId)
+  const recordMap = await getPage(post.id)
+  const pageBlock = getBlockValue(recordMap, idToUuid(post.id))
+  const contentBlockIds = pageBlock?.content || []
 
-  return blocks
-    .filter((b) => b.type === 'image')
-    .map((b) => {
-      const image = b.image
-      const src =
-        image?.type === 'external'
-          ? image.external?.url
-          : image?.file?.url
-      const alt =
-        image?.caption?.[0]?.plain_text ?? ''
-
-      return { src: src ?? '', alt }
-    })
-    .filter((p) => p.src !== '')
+  return { post, recordMap, contentBlockIds }
 }

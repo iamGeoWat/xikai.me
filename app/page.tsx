@@ -1,123 +1,240 @@
-import dynamic from 'next/dynamic'
-import { getBlogPosts, getProjects, getPhotos } from '@/lib/notion'
-import { siteConfig } from '@/lib/config'
-
-const HeroScene = dynamic(
-  () => import('@/components/shader/HeroScene').then((m) => m.HeroScene),
-  { ssr: false },
-)
+import Link from 'next/link'
+import { getBlogPosts, getProjects } from '@/lib/notion'
+import { getUnsplashPhotos } from '@/lib/unsplash'
+import { siteConfig } from '@/lib/site-config'
+import { fmtDateShort } from '@/lib/format'
+import { Nav } from '@/components/nav'
+import { Footer } from '@/components/footer'
+import { Section } from '@/components/section'
 
 export const revalidate = 60
-
-function formatShortDate(dateString: string | null): string {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-}
 
 export default async function Home() {
   const [posts, projects, photos] = await Promise.all([
     getBlogPosts(),
     getProjects(),
-    getPhotos(),
+    getUnsplashPhotos(12),
   ])
 
   return (
-    <main>
-      {/* Hero */}
-      <section className="relative flex h-screen flex-col items-center justify-center">
-        <HeroScene />
-        <h1 className="text-5xl font-light tracking-tight mb-12">xikai()</h1>
-        <nav className="flex gap-8">
-          {['writing', 'projects', 'photos', 'about'].map((id, i) => (
-            <span key={id} className="flex gap-8 items-center">
-              {i > 0 && <span className="text-neutral-700">·</span>}
-              <a
-                href={`#${id}`}
-                className="text-muted hover:text-fg transition-colors duration-300 text-lg tracking-wide"
-              >
-                {id}
-              </a>
-            </span>
-          ))}
-        </nav>
-      </section>
+    <div className="max-w-reading mx-auto px-10 pt-14 pb-20">
+      <Nav />
 
-      {/* Writing */}
-      <section id="writing" className="mx-auto max-w-reading px-6 py-32">
-        <h2 className="text-2xl font-light tracking-tight mb-10 text-muted">writing</h2>
-        <div className="flex flex-col">
-          {posts.map((post) => (
+      {/* Hero */}
+      <div className="mb-14">
+        <h1 className="font-display text-[52px] font-normal leading-[1.05] tracking-tight m-0 text-balance">
+          Hi, I&rsquo;m Xikai.
+        </h1>
+      </div>
+
+      {/* ABOUT */}
+      <Section id="about" kicker="§ 01" title="About" sprite="cat">
+        <div className="mt-2">
+          <p className="text-base leading-relaxed text-ink text-pretty">
+            I&rsquo;m Xikai Liu. I work on App Store Frameworks at Apple, live in the Bay Area,
+            take photos, poke at side projects, and care about creating and exploring things.
+          </p>
+        </div>
+
+        {/* contacts */}
+        <div className="mt-8 pt-[18px] border-t border-rule grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <a
+            href={`https://github.com/${siteConfig.social.github}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-ink no-underline"
+          >
+            <div className="font-mono text-[10px] text-mute uppercase tracking-wider mb-1">
+              GitHub
+            </div>
+            <div className="text-sm">@{siteConfig.social.github}</div>
+          </a>
+          <a
+            href={`https://linkedin.com/in/${siteConfig.social.linkedin}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-ink no-underline"
+          >
+            <div className="font-mono text-[10px] text-mute uppercase tracking-wider mb-1">
+              LinkedIn
+            </div>
+            <div className="text-sm">/{siteConfig.social.linkedin}</div>
+          </a>
+          <a
+            href="https://unsplash.com/@shekai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-ink no-underline"
+          >
+            <div className="font-mono text-[10px] text-mute uppercase tracking-wider mb-1">
+              Unsplash
+            </div>
+            <div className="text-sm">@shekai</div>
+          </a>
+          <a
+            href={`mailto:${siteConfig.social.email}`}
+            className="text-ink no-underline"
+          >
+            <div className="font-mono text-[10px] text-mute uppercase tracking-wider mb-1">
+              Email
+            </div>
+            <div className="text-sm">{siteConfig.social.email}</div>
+          </a>
+        </div>
+      </Section>
+
+      {/* HIGHLIGHTS */}
+      <Section id="highlights" kicker="§ 02" title="Highlights" sprite="ghost">
+        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            {
+              href: 'https://oslab.xikai.me',
+              title: 'oslab',
+              domain: 'oslab.xikai.me',
+              blurb:
+                'Interactive simulations to help you understand how operating systems schedule processes and manage memory.',
+            },
+            {
+              href: 'https://leica.xikai.me',
+              title: 'leica',
+              domain: 'leica.xikai.me',
+              blurb:
+                'Discover the history of your Leica camera. Enter your serial number to uncover the model, year of production, and manufacturing details from our database.',
+            },
+          ].map((item) => (
             <a
-              key={post.id}
-              href={`/writing/${post.slug}`}
-              className="flex items-baseline justify-between gap-4 border-b border-neutral-800/50 py-3 text-fg/80 transition-colors duration-200 hover:text-white"
+              key={item.domain}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block border border-rule p-5 bg-paperAlt/30 hover:bg-paperAlt/70 hover:border-ink/30 transition-colors group"
             >
-              <span className="font-serif text-base">{post.title}</span>
-              <span className="shrink-0 text-sm text-muted">{formatShortDate(post.published)}</span>
+              <div className="flex items-baseline justify-between mb-3">
+                <span className="font-display text-[22px] font-medium text-ink">
+                  {item.title}
+                </span>
+                <span className="font-mono text-[10px] text-mute uppercase tracking-wider group-hover:text-accent transition-colors">
+                  Visit &rarr;
+                </span>
+              </div>
+              <p className="text-sm text-mute leading-relaxed text-pretty mb-3">
+                {item.blurb}
+              </p>
+              <div className="font-mono text-[11px] text-mute tracking-wide">
+                {item.domain}
+              </div>
             </a>
           ))}
         </div>
-      </section>
+      </Section>
 
-      {/* Projects */}
-      <section id="projects" className="mx-auto max-w-grid px-6 py-32">
-        <h2 className="text-2xl font-light tracking-tight mb-10 text-muted">projects</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projects.map((project, i) => {
-            const classes = 'block border border-neutral-800 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-600'
-            return project.url ? (
-              <a key={i} href={project.url} target="_blank" rel="noopener noreferrer" className={classes}>
-                <h3 className="mb-2 text-lg font-medium text-fg">{project.title}</h3>
-                {project.description && <p className="text-sm leading-relaxed text-muted">{project.description}</p>}
+      {/* PHOTOS */}
+      <Section id="photos" kicker="§ 03" title="Photographs" sprite="bird">
+        {photos.length > 0 ? (
+          <>
+            <div className="mt-2 columns-3 gap-2">
+              {photos.map((photo, i) => (
+                <a
+                  key={i}
+                  href={photo.href || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-2 break-inside-avoid overflow-hidden block"
+                >
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    loading="lazy"
+                    className="w-full block"
+                  />
+                </a>
+              ))}
+            </div>
+            <div className="mt-5 text-sm text-mute flex justify-between items-center">
+              <span>Latest {photos.length} frames</span>
+              <a
+                href="https://unsplash.com/@shekai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink underline underline-offset-[3px]"
+              >
+                See full archive on Unsplash &rarr;
               </a>
-            ) : (
-              <div key={i} className={classes}>
-                <h3 className="mb-2 text-lg font-medium text-fg">{project.title}</h3>
-                {project.description && <p className="text-sm leading-relaxed text-muted">{project.description}</p>}
-              </div>
-            )
-          })}
-        </div>
-      </section>
+            </div>
+          </>
+        ) : (
+          <div className="mt-6 p-6 border border-rule text-sm text-mute font-mono">
+            Photos will appear here once <code className="text-ink">UNSPLASH_ACCESS_KEY</code> is set.
+          </div>
+        )}
+      </Section>
 
-      {/* Photos */}
-      <section id="photos" className="mx-auto max-w-4xl px-6 py-32">
-        <h2 className="text-2xl font-light tracking-tight mb-10 text-muted">photos</h2>
-        <div className="space-y-16">
-          {photos.map((photo, i) => (
-            <img
-              key={i}
-              src={photo.src}
-              alt={photo.alt}
-              className="w-full"
-              loading="lazy"
-            />
+      {/* WRITING */}
+      <Section id="writing" kicker="§ 04" title="Writing" sprite="buddy">
+        <div className="mt-2">
+          {posts.map((post, i) => (
+            <Link
+              key={post.id}
+              href={`/articles/${post.slug}`}
+              className={`grid grid-cols-[90px_1fr_auto] gap-5 py-[18px] border-t border-rule items-baseline text-ink no-underline hover:bg-paperAlt/40 transition-colors ${
+                i === posts.length - 1 ? 'border-b border-rule' : ''
+              }`}
+            >
+              <div className="font-mono text-[11px] text-mute uppercase tracking-wide pt-1">
+                {fmtDateShort(post.published)}
+              </div>
+              <div>
+                <div className="font-display text-[19px] font-medium tracking-tight mb-1">
+                  {post.title}
+                </div>
+                <div className="text-sm text-mute leading-relaxed text-pretty">
+                  {post.description}
+                </div>
+              </div>
+              <div className="font-mono text-[10px] text-mute uppercase tracking-wider whitespace-nowrap pt-1.5">
+                {post.tags[0] || 'note'}
+              </div>
+            </Link>
           ))}
         </div>
-      </section>
+      </Section>
 
-      {/* About */}
-      <section id="about" className="flex min-h-[60vh] flex-col items-center justify-center px-6 py-32">
-        <div className="max-w-lg text-center">
-          <p className="text-xl leading-relaxed mb-4">
-            Software engineer at Apple. Previously TikTok, Meituan.
-          </p>
-          <p className="text-xl leading-relaxed mb-4">
-            Two-time Apple WWDC Swift Student Challenge winner.
-          </p>
-          <p className="text-xl leading-relaxed mb-10">
-            I build things with code.
-          </p>
-          <div className="flex justify-center gap-6 text-muted">
-            <a href={`https://github.com/${siteConfig.github}`} target="_blank" rel="noopener noreferrer" className="hover:text-fg transition-colors">GitHub</a>
-            <span className="text-neutral-700">·</span>
-            <a href={`https://www.linkedin.com/in/${siteConfig.linkedin}`} target="_blank" rel="noopener noreferrer" className="hover:text-fg transition-colors">LinkedIn</a>
-            <span className="text-neutral-700">·</span>
-            <a href="mailto:realxikai@gmail.com" className="hover:text-fg transition-colors">Email</a>
-          </div>
+      {/* HOBBY PROJECTS */}
+      <Section id="work" kicker="§ 05" title="Hobby projects" sprite="mush">
+        <div className="mt-2 grid gap-0.5">
+          {projects.map((project) => (
+            <a
+              key={project.id}
+              href={project.url || '#'}
+              target={project.url ? '_blank' : undefined}
+              rel={project.url ? 'noopener noreferrer' : undefined}
+              className="grid grid-cols-[1fr_auto] gap-4 py-4 px-1 border-t border-rule text-ink no-underline items-baseline hover:bg-paperAlt/40 transition-colors"
+            >
+              <div>
+                <span className="font-mono text-sm font-medium text-accent">
+                  {project.title}
+                </span>
+                {project.description && (
+                  <span className="text-sm text-ink ml-3">{project.description}</span>
+                )}
+              </div>
+              {project.url && (
+                <div className="font-mono text-xs text-mute tracking-wide whitespace-nowrap">
+                  {(() => {
+                    try {
+                      return new URL(project.url).hostname.replace('www.', '') + ' →'
+                    } catch {
+                      return '→'
+                    }
+                  })()}
+                </div>
+              )}
+            </a>
+          ))}
         </div>
-      </section>
-    </main>
+      </Section>
+
+      <Footer />
+    </div>
   )
 }

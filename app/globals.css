@@ -5,13 +5,32 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-bg text-fg antialiased;
+    background-color: #f4efe6;
+    color: #1c1a15;
+    font-family: var(--font-instrument-sans), system-ui, sans-serif;
   }
 
   ::selection {
-    @apply bg-fg/20;
+    background-color: rgba(192, 84, 64, 0.2);
+  }
+
+  /* Thin hairline rules */
+  hr {
+    border: 0;
+    border-top: 1px solid #e0d8c9;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
   }
 }

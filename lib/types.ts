@@ -5,7 +5,7 @@ export interface BlogPost {
   description: string
   published: string | null
   tags: string[]
-  isPublic: boolean
+  featured: boolean
 }
 
 export interface Project {
@@ -13,4 +13,12 @@ export interface Project {
   title: string
   description: string
   url: string | null
+}
+
+export interface Photo {
+  src: string
+  alt: string
+  href?: string
+  width?: number
+  height?: number
 }
