@@ -38,7 +38,7 @@ export async function getUnsplashPhotos(count = 24): Promise<Photo[]> {
         Authorization: `Client-ID ${key}`,
         'Accept-Version': 'v1',
       },
-      next: { revalidate: 3600 },
+      next: { revalidate: 86400, tags: ['unsplash-photos'] },
     })
 
     if (!res.ok) {

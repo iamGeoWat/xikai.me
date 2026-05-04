@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { getBlogPosts, getProjects } from '@/lib/notion'
 import { getUnsplashPhotos } from '@/lib/unsplash'
 import { siteConfig } from '@/lib/site-config'
@@ -7,7 +8,7 @@ import { Nav } from '@/components/nav'
 import { Footer } from '@/components/footer'
 import { Section } from '@/components/section'
 
-export const revalidate = 60
+export const revalidate = 600
 
 export default async function Home() {
   const [posts, projects, photos] = await Promise.all([
@@ -141,11 +142,14 @@ export default async function Home() {
                   rel="noopener noreferrer"
                   className="mb-2 break-inside-avoid overflow-hidden block"
                 >
-                  <img
+                  <Image
                     src={photo.src}
                     alt={photo.alt}
+                    width={photo.width || 1080}
+                    height={photo.height || 1350}
+                    sizes="(max-width: 640px) 33vw, 240px"
                     loading="lazy"
-                    className="w-full block"
+                    className="w-full h-auto block"
                   />
                 </a>
               ))}

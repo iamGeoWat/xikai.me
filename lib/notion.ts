@@ -1,9 +1,9 @@
+import { unstable_cache } from 'next/cache'
 import { NotionAPI } from 'notion-client'
 import {
   getTextContent,
   getPageProperty,
   getDateValue,
-  idToUuid,
 } from 'notion-utils'
 import type { ExtendedRecordMap, Block } from 'notion-types'
 import { siteConfig } from './site-config'
@@ -11,8 +11,16 @@ import type { BlogPost, Project } from './types'
 
 const api = new NotionAPI()
 
+const fetchPageFromNotion = (pageId: string) => api.getPage(pageId)
+
+const cachedFetchPage = unstable_cache(
+  fetchPageFromNotion,
+  ['notion-page'],
+  { revalidate: 600, tags: ['notion'] }
+)
+
 export async function getPage(pageId: string): Promise<ExtendedRecordMap> {
-  return api.getPage(pageId)
+  return cachedFetchPage(pageId)
 }
 
 /** notion-client v7 double-wraps records as { value: { value: ... } }. Unwrap safely. */
@@ -144,7 +152,7 @@ export async function getArticlePage(slug: string) {
   if (!post) return null
 
   const recordMap = await getPage(post.id)
-  const pageBlock = getBlockValue(recordMap, idToUuid(post.id))
+  const pageBlock = getBlockValue(recordMap, post.id)
   const contentBlockIds = pageBlock?.content || []
 
   return { post, recordMap, contentBlockIds }

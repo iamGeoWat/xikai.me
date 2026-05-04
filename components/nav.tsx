@@ -10,11 +10,11 @@ export function Nav() {
         xikai.me
       </Link>
       <nav className="flex gap-5 text-[13px] text-mute">
-        <a href="#about" className="hover:text-ink transition-colors">About</a>
-        <a href="#highlights" className="hover:text-ink transition-colors">Highlights</a>
-        <a href="#photos" className="hover:text-ink transition-colors">Photographs</a>
-        <a href="#writing" className="hover:text-ink transition-colors">Writing</a>
-        <a href="#work" className="hover:text-ink transition-colors">Projects</a>
+        <Link href="/#about" className="hover:text-ink transition-colors">About</Link>
+        <Link href="/#highlights" className="hover:text-ink transition-colors">Highlights</Link>
+        <Link href="/#photos" className="hover:text-ink transition-colors">Photographs</Link>
+        <Link href="/#writing" className="hover:text-ink transition-colors">Writing</Link>
+        <Link href="/#work" className="hover:text-ink transition-colors">Projects</Link>
       </nav>
     </header>
   )
