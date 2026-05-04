@@ -3,6 +3,9 @@ import type { ExtendedRecordMap, Block } from 'notion-types'
 import { getTextContent, defaultMapImageUrl } from 'notion-utils'
 import { RichText } from './rich-text'
 
+const hasRichText = (decorations: any): boolean =>
+  Array.isArray(decorations) && decorations.some((d: any) => d?.[0])
+
 function NotionBlock({
   block,
   recordMap,
@@ -18,7 +21,7 @@ function NotionBlock({
       if (!properties?.title) return <div className="h-4" />
       return (
         <p className="text-ink leading-[1.7] mb-4 text-[17px] font-display">
-          <RichText decorations={properties.title} />
+          <RichText decorations={properties.title} recordMap={recordMap} />
         </p>
       )
     }
@@ -26,21 +29,21 @@ function NotionBlock({
     case 'header':
       return (
         <h1 className="font-display text-3xl font-normal text-ink mt-12 mb-4 tracking-tight">
-          <RichText decorations={properties?.title} />
+          <RichText decorations={properties?.title} recordMap={recordMap} />
         </h1>
       )
 
     case 'sub_header':
       return (
         <h2 className="font-display text-2xl font-normal text-ink mt-10 mb-3 tracking-tight">
-          <RichText decorations={properties?.title} />
+          <RichText decorations={properties?.title} recordMap={recordMap} />
         </h2>
       )
 
     case 'sub_sub_header':
       return (
         <h3 className="font-sans text-lg font-medium text-ink mt-8 mb-2">
-          <RichText decorations={properties?.title} />
+          <RichText decorations={properties?.title} recordMap={recordMap} />
         </h3>
       )
 
@@ -48,7 +51,7 @@ function NotionBlock({
     case 'numbered_list':
       return (
         <li className="text-ink leading-[1.7] font-display text-[17px] mb-1">
-          <RichText decorations={properties?.title} />
+          <RichText decorations={properties?.title} recordMap={recordMap} />
           {block.content && (
             <NotionBlocks blockIds={block.content} recordMap={recordMap} />
           )}
@@ -90,17 +93,21 @@ function NotionBlock({
     case 'quote':
       return (
         <blockquote className="border-l-2 border-accent/60 pl-5 my-6 font-display italic text-[17px] text-ink/90 leading-[1.6]">
-          <RichText decorations={properties?.title} />
+          <RichText decorations={properties?.title} recordMap={recordMap} />
         </blockquote>
       )
 
     case 'callout': {
-      const icon = format?.page_icon || ''
+      const icon = (format as any)?.page_icon || (block as any)?.format?.page_icon || ''
+      const titleHasText = hasRichText(properties?.title)
       return (
         <div className="flex gap-3 bg-paperAlt/50 border border-rule p-4 my-6">
-          {icon && <span className="text-base shrink-0">{icon}</span>}
-          <div className="text-ink leading-relaxed font-display text-[16px]">
-            <RichText decorations={properties?.title} />
+          {icon && <span className="text-base shrink-0 leading-[1.6]">{icon}</span>}
+          <div className="text-ink leading-relaxed font-display text-[16px] flex-1 min-w-0 [&>p]:text-[16px] [&>p]:leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2 [&>ul>li]:text-[16px] [&>ol>li]:text-[16px]">
+            {titleHasText && <RichText decorations={properties?.title} recordMap={recordMap} />}
+            {block.content && block.content.length > 0 && (
+              <NotionBlocks blockIds={block.content} recordMap={recordMap} />
+            )}
           </div>
         </div>
       )
