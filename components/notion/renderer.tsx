@@ -1,6 +1,6 @@
 import React from 'react'
 import type { ExtendedRecordMap, Block } from 'notion-types'
-import { getTextContent } from 'notion-utils'
+import { getTextContent, defaultMapImageUrl } from 'notion-utils'
 import { RichText } from './rich-text'
 
 function NotionBlock({
@@ -71,7 +71,8 @@ function NotionBlock({
     }
 
     case 'image': {
-      const src = properties?.source?.[0]?.[0] || format?.display_source
+      const rawSrc = properties?.source?.[0]?.[0] || format?.display_source
+      const src = defaultMapImageUrl(rawSrc, block)
       const caption = getTextContent(properties?.caption)
       if (!src) return null
       return (
