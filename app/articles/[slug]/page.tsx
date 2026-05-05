@@ -45,17 +45,17 @@ export default async function ArticlePage({
 
       <article>
         <Link
-          href="/#writing"
+          href={post.archived ? '/#archive' : '/#writing'}
           className="font-mono text-[11px] text-mute uppercase tracking-wider hover:text-ink transition-colors"
         >
-          &larr; All writing
+          &larr; {post.archived ? 'Archive' : 'All writing'}
         </Link>
 
         <h1 className="font-display text-[44px] font-normal leading-[1.1] tracking-tight mt-6 mb-4 text-balance">
           {post.title}
         </h1>
 
-        <div className="font-mono text-[11px] text-mute uppercase tracking-wider mb-12 flex items-center gap-3">
+        <div className="font-mono text-[11px] text-mute uppercase tracking-wider mb-12 flex items-center gap-3 flex-wrap">
           {post.published && <span>{fmtDate(post.published)}</span>}
           {post.tags.length > 0 && (
             <>
@@ -63,7 +63,19 @@ export default async function ArticlePage({
               <span>{post.tags.join(' · ')}</span>
             </>
           )}
+          {post.archived && (
+            <>
+              <span>·</span>
+              <span className="text-accent">Archived</span>
+            </>
+          )}
         </div>
+
+        {post.archived && post.archiveNote && (
+          <div className="border-l-2 border-accent/60 pl-5 py-1 mb-10 text-mute italic font-display text-[15px] leading-[1.6]">
+            {post.archiveNote}
+          </div>
+        )}
 
         <div className="article-content">
           <NotionBlocks blockIds={contentBlockIds} recordMap={recordMap} />

@@ -17,6 +17,9 @@ export default async function Home() {
     getUnsplashPhotos(12),
   ])
 
+  const writing = posts.filter((p) => !p.archived)
+  const archive = posts.filter((p) => p.archived)
+
   return (
     <div className="max-w-reading mx-auto px-10 pt-14 pb-20">
       <Nav />
@@ -176,12 +179,12 @@ export default async function Home() {
       {/* WRITING */}
       <Section id="writing" kicker="§ 04" title="Writing" sprite="buddy">
         <div className="mt-2">
-          {posts.map((post, i) => (
+          {writing.map((post, i) => (
             <Link
               key={post.id}
               href={`/articles/${post.slug}`}
               className={`grid grid-cols-[90px_1fr_auto] gap-5 py-[18px] border-t border-rule items-baseline text-ink no-underline hover:bg-paperAlt/40 transition-colors ${
-                i === posts.length - 1 ? 'border-b border-rule' : ''
+                i === writing.length - 1 ? 'border-b border-rule' : ''
               }`}
             >
               <div className="font-mono text-[11px] text-mute uppercase tracking-wide pt-1">
@@ -201,6 +204,42 @@ export default async function Home() {
             </Link>
           ))}
         </div>
+
+        {archive.length > 0 && (
+          <div id="archive" className="mt-12">
+            <div className="font-mono text-[10px] text-mute/80 uppercase tracking-wider mb-3">
+              § 04½ &nbsp;·&nbsp; Archive
+            </div>
+            <div>
+              {archive.map((post, i) => (
+                <Link
+                  key={post.id}
+                  href={`/articles/${post.slug}`}
+                  className={`grid grid-cols-[90px_1fr_auto] gap-5 py-3 border-t border-rule/60 items-baseline text-mute no-underline hover:bg-paperAlt/30 hover:text-ink transition-colors ${
+                    i === archive.length - 1 ? 'border-b border-rule/60' : ''
+                  }`}
+                >
+                  <div className="font-mono text-[10px] text-mute/80 uppercase tracking-wide pt-1">
+                    {fmtDateShort(post.published)}
+                  </div>
+                  <div>
+                    <div className="font-display text-[15px] tracking-tight">
+                      {post.title}
+                    </div>
+                    {post.description && (
+                      <div className="text-xs text-mute/80 leading-relaxed text-pretty mt-0.5">
+                        {post.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="font-mono text-[9px] text-mute/70 uppercase tracking-wider whitespace-nowrap pt-1.5">
+                    {post.tags[0] || 'note'}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* HOBBY PROJECTS */}

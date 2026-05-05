@@ -6,6 +6,8 @@ export interface BlogPost {
   published: string | null
   tags: string[]
   featured: boolean
+  archived: boolean
+  archiveNote: string
 }
 
 export interface Project {

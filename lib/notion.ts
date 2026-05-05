@@ -85,6 +85,8 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
         ? (tagsRaw as string).split(',').map((t) => t.trim()).filter(Boolean)
         : []
     const featured = getPageProperty<boolean>('Featured', block, recordMap) || false
+    const archived = getPageProperty<boolean>('Archived', block, recordMap) || false
+    const archiveNote = getPageProperty<string>('ArchiveNote', block, recordMap) || ''
 
     const publishedRaw = getPageProperty<any>('Published', block, recordMap)
     let published: string | null = null
@@ -97,7 +99,7 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
       }
     }
 
-    posts.push({ id: blockId, title, slug, description, published, tags, featured })
+    posts.push({ id: blockId, title, slug, description, published, tags, featured, archived, archiveNote })
   }
 
   posts.sort((a, b) => {
